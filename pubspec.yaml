@@ -1,0 +1,42 @@
+name: ing_config_app
+description: A new Flutter project.
+publish_to: 'none' # Remove this line if you wish to publish to pub.dev
+version: 1.0.0+1
+
+environment:
+  sdk: '>=3.0.1 <4.0.0'
+dependencies:
+  flutter:
+    sdk: flutter
+
+  cupertino_icons: ^1.0.2
+  permission_handler: ^10.4.3
+  fluttertoast: ^8.2.2
+  http: ^1.1.0
+  path_provider: ^2.0.15
+  flutter_blue_plus: ^1.29.5
+  qr_code_scanner: ^1.0.1
+  share: ^2.0.4
+  easy_refresh: ^3.3.2+4
+  dio: ^5.3.4
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+
+  flutter_lints: ^2.0.0
+
+  flutter_launcher_icons: ^0.9.2
+
+flutter_icons:
+  android: true
+  ios: true
+  image_path: "assets/ingAppLogo.png"
+
+
+flutter:
+
+  uses-material-design: true
+
+  assets:
+    - assets/ingAppLogo.png
