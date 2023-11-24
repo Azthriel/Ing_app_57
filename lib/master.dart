@@ -44,6 +44,7 @@ String nameOfWifi = '';
 var wifiIcon = Icons.wifi_off;
 bool connectionFlag = false;
 bool checkbleFlag = false;
+bool bluetoothOn = false;
 
 MaterialColor statusColor = Colors.grey;
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();

@@ -27,7 +27,7 @@ class Regbank extends StatelessWidget {
           appBar: AppBar(
             backgroundColor: const Color.fromARGB(255, 29, 163, 169),
             foregroundColor: const Color.fromARGB(255, 255, 255, 255),
-            title: const Text('Regulation Bank Tools'),
+            title: const Text('Configuración 57 IOT'),
             bottom: const TabBar(
               labelColor: Color.fromARGB(255, 255, 255, 255),
               unselectedLabelColor: Color.fromARGB(255, 1, 18, 28),
@@ -54,8 +54,6 @@ class Regbank extends StatelessWidget {
                       onPressed: () async {
                         String url =
                             'https://script.google.com/macros/s/AKfycbw_yagA9NNUKmbAoVLsbg9R9sR9ZJCbNRk-TUdQDyXL3pVOUdeo7lrKFjQBIgZ2KazB/exec';
-                        // var uri = Uri.parse(url);
-                        // final response = await http.post(uri);
                         final response = await dio.post(url);
                         if (response.statusCode == 200) {
                           print('Wipe completo');
@@ -77,7 +75,7 @@ class Regbank extends StatelessWidget {
                           return AlertDialog(
                               title: const Center(
                                   child: Text(
-                                'Add a Nickname:',
+                                'Agrega un nombre de usuario:',
                                 style: TextStyle(
                                     color: Colors.black,
                                     fontWeight: FontWeight.bold),
@@ -163,11 +161,11 @@ class RegisterTabState extends State<RegisterTab> {
   String textToShow(int data) {
     switch (data) {
       case 0:
-        return 'Add SN header';
+        return 'Agrega la cabecera del número de serie';
       case 1:
-        return 'From...';
+        return 'Desde...';
       case 2:
-        return 'To...';
+        return 'Hasta...';
       default:
         return "Error Desconocido";
     }
@@ -225,6 +223,23 @@ class RegisterTabState extends State<RegisterTab> {
   Widget build(BuildContext context) {
     return Scaffold(
         backgroundColor: const Color.fromARGB(255, 1, 18, 28),
+        appBar: AppBar(
+          title: const Text('Registro', style: TextStyle(color: Colors.white)),
+          backgroundColor: Colors.transparent,
+          centerTitle: true,
+        ),
+        bottomNavigationBar: const BottomAppBar(
+            color: Colors.transparent,
+            shadowColor: Colors.transparent,
+            child: Center(
+              child: Text(
+                  'Tanto el dispositivo como los detectores\ndeben estar conectados a internet',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                      color: Colors.teal,
+                      fontSize: 12,
+                      backgroundColor: Colors.transparent)),
+            )),
         body: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
@@ -285,7 +300,7 @@ class RegisterTabState extends State<RegisterTab> {
                       step = 0;
                       setState(() {});
                     },
-              child: const Text('MAKE REGISTER'),
+              child: const Text('REGISTRAR EQUIPOS'),
             ),
             const SizedBox(height: 10),
             ElevatedButton(
@@ -295,7 +310,7 @@ class RegisterTabState extends State<RegisterTab> {
                     foregroundColor: MaterialStateProperty.all<Color>(
                         const Color.fromARGB(255, 255, 255, 255))),
                 onPressed: () => cancelReg(),
-                child: const Text('CANCEL')),
+                child: const Text('CANCELAR')),
             const SizedBox(height: 10),
             ListView.builder(
               shrinkWrap: true,
@@ -309,7 +324,7 @@ class RegisterTabState extends State<RegisterTab> {
                   title: Text(header),
                   leadingAndTrailingTextStyle:
                       const TextStyle(color: Color.fromARGB(255, 29, 163, 169)),
-                  trailing: isCharged ? const Text("--charged") : null,
+                  trailing: isCharged ? const Text("--cargado") : null,
                 );
               },
             ),
@@ -390,9 +405,6 @@ class DiagnosisTabState extends State<DiagnosisTab> {
     String url = 'http://RB_IOT_$sn.Local:8080/DIAGNOSIS_CH4';
     print('Vine aquis $url');
     try {
-      // final response =
-      //     await client.get(Uri.parse(url)).timeout(const Duration(seconds: 10));
-
       final response = await dio.get(url);
 
       if (response.statusCode == 200) {
@@ -435,9 +447,6 @@ class DiagnosisTabState extends State<DiagnosisTab> {
     String url = 'http://RB_IOT_$sn.Local:8080/DIAGNOSIS_CO';
     print('Vine aquis $url');
     try {
-      // final response =
-      //     await client.get(Uri.parse(url)).timeout(const Duration(seconds: 10));
-
       final response = await dio.get(url);
 
       if (response.statusCode == 200) {
@@ -501,7 +510,6 @@ class DiagnosisTabState extends State<DiagnosisTab> {
       'nickname': nickname ?? 'Anónimo'
     });
 
-    // final response = await http.get(uri);
     final response = await dio.getUri(uri);
 
     if (response.statusCode == 200) {
@@ -712,6 +720,23 @@ class DiagnosisTabState extends State<DiagnosisTab> {
   Widget build(BuildContext context) {
     return Scaffold(
         backgroundColor: const Color.fromARGB(255, 1, 18, 28),
+        appBar: AppBar(
+          title: const Center(child: Text('Diagnosis')),
+          backgroundColor: Colors.transparent,
+          foregroundColor: Colors.white,
+        ),
+        bottomNavigationBar: const BottomAppBar(
+            color: Colors.transparent,
+            shadowColor: Colors.transparent,
+            child: Center(
+              child: Text(
+                  'Tanto el dispositivo como los detectores\ndeben estar conectados a internet',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                      color: Colors.teal,
+                      fontSize: 12,
+                      backgroundColor: Colors.transparent)),
+            )),
         body: Center(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -737,7 +762,7 @@ class DiagnosisTabState extends State<DiagnosisTab> {
                     ),
                   ),
                   Text(
-                    'Diagnosis progress: ${(progressValue * 100).toInt()}%',
+                    'Progreso del diagnostico: ${(progressValue * 100).toInt()}%',
                     style: const TextStyle(
                       color: Color.fromARGB(255, 255, 255, 255),
                       fontWeight: FontWeight.bold,
@@ -753,7 +778,7 @@ class DiagnosisTabState extends State<DiagnosisTab> {
                     foregroundColor: MaterialStateProperty.all<Color>(
                         const Color.fromARGB(255, 255, 255, 255))),
                 onPressed: isDiagnosing ? null : startDiagnosis,
-                child: const Text('Start diagnose'),
+                child: const Text('Empezar diagnosis'),
               ),
               const SizedBox(height: 10),
               ElevatedButton(
@@ -763,7 +788,7 @@ class DiagnosisTabState extends State<DiagnosisTab> {
                     foregroundColor: MaterialStateProperty.all<Color>(
                         const Color.fromARGB(255, 255, 255, 255))),
                 onPressed: isDiagnosing ? null : startDiagnosisCH4,
-                child: const Text('Start diagnose CH4'),
+                child: const Text('Empezar diagnosis en CH4'),
               ),
               const SizedBox(height: 10),
               ElevatedButton(
@@ -773,7 +798,7 @@ class DiagnosisTabState extends State<DiagnosisTab> {
                     foregroundColor: MaterialStateProperty.all<Color>(
                         const Color.fromARGB(255, 255, 255, 255))),
                 onPressed: isDiagnosing ? null : startDiagnosisCO,
-                child: const Text('Start diagnose CO'),
+                child: const Text('Empezar diagnosis en CO'),
               ),
               const SizedBox(height: 10),
               ElevatedButton(
@@ -783,11 +808,11 @@ class DiagnosisTabState extends State<DiagnosisTab> {
                     foregroundColor: MaterialStateProperty.all<Color>(
                         const Color.fromARGB(255, 255, 255, 255))),
                 onPressed: isDiagnosing ? cancelDiagnosis : null,
-                child: const Text('Cancel'),
+                child: const Text('Cancelar'),
               ),
               isDiagnosing
                   ? Text(
-                      'Elapsed time: ${elapsedTime()}',
+                      'Tiempo transcurrido: ${elapsedTime()}',
                       style: const TextStyle(
                           color: Color.fromARGB(255, 29, 163, 169)),
                     )
@@ -824,20 +849,15 @@ class RegulationTabState extends State<RegulationTab> {
     print('Me voy a $url');
 
     try {
-      // final response =
-      //     await http.get(Uri.parse(url)).timeout(const Duration(seconds: 10));
-
       final response = await dio.get(url);
 
       if (response.statusCode == 200) {
-        if (response.data
-            .toString()
-            .contains('REGP[" + $rPoint +"](SUCCESS)')) {
+        if (response.data.toString().contains('PAYLOAD')) {
           var texto = response.data.toString();
-          String buscar = 'PAYLOAD[';
+          String buscar = 'PAYLOAD(';
           int inicio = texto.indexOf(buscar);
           if (inicio != -1) {
-            int fin = texto.indexOf(']', inicio);
+            int fin = texto.indexOf(')', inicio);
             if (fin != -1) {
               payloadCompleto = texto.substring(inicio + 1, fin);
               print(payloadCompleto);
@@ -957,6 +977,23 @@ class RegulationTabState extends State<RegulationTab> {
   Widget build(BuildContext context) {
     return Scaffold(
         backgroundColor: const Color.fromARGB(255, 1, 18, 28),
+        appBar: AppBar(
+          title: const Center(child: Text('Regulación')),
+          backgroundColor: Colors.transparent,
+          foregroundColor: Colors.white,
+        ),
+        bottomNavigationBar: const BottomAppBar(
+            color: Colors.transparent,
+            shadowColor: Colors.transparent,
+            child: Center(
+              child: Text(
+                  'Tanto el dispositivo como los detectores\ndeben estar conectados a internet',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                      color: Colors.teal,
+                      fontSize: 12,
+                      backgroundColor: Colors.transparent)),
+            )),
         body: Center(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -983,7 +1020,7 @@ class RegulationTabState extends State<RegulationTab> {
                     ),
                   ),
                   Text(
-                    'Regulation progress: ${(individualProgressValue * 100).toInt()}%',
+                    'Progreso de la regulación: ${(individualProgressValue * 100).toInt()}%',
                     style: const TextStyle(
                       color: Color.fromARGB(255, 255, 255, 255),
                       fontWeight: FontWeight.bold,
@@ -1002,7 +1039,7 @@ class RegulationTabState extends State<RegulationTab> {
                     decoration: InputDecoration(
                         hintStyle: const TextStyle(
                             color: Color.fromARGB(255, 255, 255, 255)),
-                        hintText: tempSubmitted ? temp : 'Set temperature'),
+                        hintText: tempSubmitted ? temp : 'Definir temperatura'),
                     onSubmitted: (value) {
                       temp = tempController.text;
                       tempController.clear();
@@ -1019,7 +1056,9 @@ class RegulationTabState extends State<RegulationTab> {
                     decoration: InputDecoration(
                         hintStyle: const TextStyle(
                             color: Color.fromARGB(255, 255, 255, 255)),
-                        hintText: regSubmitted ? rPoint : 'Set RegPoint'),
+                        hintText: regSubmitted
+                            ? rPoint
+                            : 'Definir punto de regulación'),
                     onSubmitted: (value) {
                       rPoint = regPointController.text;
                       regPointController.clear();
@@ -1035,7 +1074,7 @@ class RegulationTabState extends State<RegulationTab> {
                       foregroundColor: MaterialStateProperty.all<Color>(
                           const Color.fromARGB(255, 255, 255, 255))),
                   onPressed: () => startRegulation(),
-                  child: const Text('Start regulation')),
+                  child: const Text('Empezar regulación')),
               const SizedBox(height: 10),
               ElevatedButton(
                   style: ButtonStyle(
@@ -1054,10 +1093,10 @@ class RegulationTabState extends State<RegulationTab> {
                       regSubmitted = false;
                     });
                   },
-                  child: const Text('Wipe value')),
+                  child: const Text('Cancelar')),
               const SizedBox(height: 10),
               isRegulating
-                  ? Text('Elapsed time: ${elapsedTime()}')
+                  ? Text('Tiempo transcurrido: ${elapsedTime()}')
                   : Container(),
             ],
           ),
@@ -1096,26 +1135,29 @@ class ScanTabState extends State<ScanTab> {
   }
 
   void scan() async {
-    try {
-      await FlutterBluePlus.startScan(
-          withKeywords: ['Detector'],
-          timeout: const Duration(seconds: 30),
-          androidUsesFineLocation: true);
-      FlutterBluePlus.scanResults.listen((results) {
-        for (ScanResult result in results) {
-          if (!devices
-              .any((device) => device.remoteId == result.device.remoteId)) {
-            setState(() {
-              devices.add(result.device);
-              devices.sort((a, b) => a.platformName.compareTo(b.platformName));
-              filteredDevices = devices;
-            });
+    if (bluetoothOn) {
+      try {
+        await FlutterBluePlus.startScan(
+            withKeywords: ['Detector'],
+            timeout: const Duration(seconds: 30),
+            androidUsesFineLocation: true);
+        FlutterBluePlus.scanResults.listen((results) {
+          for (ScanResult result in results) {
+            if (!devices
+                .any((device) => device.remoteId == result.device.remoteId)) {
+              setState(() {
+                devices.add(result.device);
+                devices
+                    .sort((a, b) => a.platformName.compareTo(b.platformName));
+                filteredDevices = devices;
+              });
+            }
           }
-        }
-      });
-    } catch (e, stackTrace) {
-      print('Error al escanear $e');
-      handleManualError(e, stackTrace);
+        });
+      } catch (e, stackTrace) {
+        print('Error al escanear $e');
+        handleManualError(e, stackTrace);
+      }
     }
   }
 
@@ -1410,6 +1452,23 @@ class UpdateTabState extends State<UpdateTab> {
   Widget build(BuildContext context) {
     return Scaffold(
         backgroundColor: const Color.fromARGB(255, 1, 18, 28),
+        appBar: AppBar(
+          title: const Center(child: Text('Actualizaciones múltiples')),
+          backgroundColor: Colors.transparent,
+          foregroundColor: Colors.white,
+        ),
+        bottomNavigationBar: const BottomAppBar(
+            color: Colors.transparent,
+            shadowColor: Colors.transparent,
+            child: Center(
+              child: Text(
+                  'Tanto el dispositivo como los detectores\ndeben estar conectados a internet',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                      color: Colors.teal,
+                      fontSize: 12,
+                      backgroundColor: Colors.transparent)),
+            )),
         body: Center(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -1422,8 +1481,9 @@ class UpdateTabState extends State<UpdateTab> {
                       foregroundColor: MaterialStateProperty.all<Color>(
                           const Color.fromARGB(255, 255, 255, 255))),
                   child: const Text('ACTUALIZAR PICS')),
+              const SizedBox(height: 20),
               ElevatedButton(
-                  onPressed: () => print('uwu'),
+                  onPressed: () => updateEsps(),
                   style: ButtonStyle(
                       backgroundColor: MaterialStateProperty.all<Color>(
                           const Color.fromARGB(255, 29, 163, 169)),

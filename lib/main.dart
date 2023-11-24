@@ -66,6 +66,8 @@ class MyAppState extends State<MyApp> {
             },
           );
         }
+      }else if(state == BluetoothAdapterState.on){
+        bluetoothOn = true;
       }
     });
   }

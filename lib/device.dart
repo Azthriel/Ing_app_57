@@ -4,7 +4,6 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:math';
 import 'dart:typed_data';
-import 'package:http/http.dart' as http;
 import 'package:flutter/material.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
@@ -1501,9 +1500,9 @@ class OTAState extends State<OTAPage> {
           await file.delete();
         }
 
-        var client = http.Client();
-        var req = await client.get(Uri.parse(url));
-        var bytes = req.bodyBytes;
+
+        var req = await dio.get(url);
+        var bytes = req.data;
 
         await file.writeAsBytes(bytes);
 

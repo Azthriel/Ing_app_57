@@ -12,7 +12,6 @@ dependencies:
   cupertino_icons: ^1.0.2
   permission_handler: ^10.4.3
   fluttertoast: ^8.2.2
-  http: ^1.1.0
   path_provider: ^2.0.15
   flutter_blue_plus: ^1.29.5
   qr_code_scanner: ^1.0.1
