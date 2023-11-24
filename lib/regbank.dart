@@ -1136,6 +1136,7 @@ class ScanTabState extends State<ScanTab> {
 
   void scan() async {
     if (bluetoothOn) {
+      print('Entre a escanear');
       try {
         await FlutterBluePlus.startScan(
             withKeywords: ['Detector'],
@@ -1184,6 +1185,9 @@ class ScanTabState extends State<ScanTab> {
               toolsValues.clear();
               nameOfWifi = '';
               connectionFlag = false;
+              alreadySubCal = false;
+              alreadySubReg = false;
+              alreadySubOta = false;
               print('Razon: ${myDevice.device.disconnectReason?.description}');
               navigatorKey.currentState?.pushReplacementNamed('/regbank');
               break;
@@ -1213,9 +1217,14 @@ class ScanTabState extends State<ScanTab> {
         }
       });
     } catch (e, stackTrace) {
-      print('Error al conectar: $e');
-      showToast('Error al conectar');
-      handleManualError(e, stackTrace);
+      if (e is FlutterBluePlusException && e.code == 133) {
+        print('Error específico de Android con código 133: $e');
+        showToast('Error de conexión, intentelo nuevamente');
+      } else {
+        print('Error al conectar: $e');
+        showToast('Error al conectar');
+        handleManualError(e, stackTrace);
+      }
     }
   }
 

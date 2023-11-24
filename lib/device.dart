@@ -24,12 +24,6 @@ class MyDeviceTabsState extends State<MyDeviceTabs> {
     subscribeToWifiStatus();
   }
 
-  @override
-  dispose() {
-    myDevice.toolsUuid.setNotifyValue(false);
-    super.dispose();
-  }
-
   void updateWifiValues(List<int> data) {
     var fun =
         utf8.decode(data); //Wifi status | wifi ssid | ble status | nickname
@@ -523,7 +517,6 @@ class CalibrationState extends State<CalibrationPage> {
   String rrco = '';
   int rsValue = 0;
   int rrcoValue = 0;
-  bool regulationDone = false;
   bool rsInvalid = false;
   bool rrcoInvalid = false;
   bool rsOver35k = false;
@@ -534,6 +527,14 @@ class CalibrationState extends State<CalibrationPage> {
     _calValues = calibrationValues;
     updateValues(_calValues);
     _subscribeToCalCharacteristic();
+  }
+
+  @override
+  void dispose() {
+    _setVccInputController.dispose();
+    _setVrmsInputController.dispose();
+    _setVrms02InputController.dispose();
+    super.dispose();
   }
 
   void _setVcc(String newValue) {
@@ -555,6 +556,8 @@ class CalibrationState extends State<CalibrationPage> {
       print('Error al escribir vcc offset $e');
       handleManualError(e, stackTrace);
     }
+
+    setState(() {});
   }
 
   void _setVrms(String newValue) {
@@ -573,6 +576,8 @@ class CalibrationState extends State<CalibrationPage> {
       print('Error al setear vrms offset $e');
       handleManualError(e, stackTrace);
     }
+
+    setState(() {});
   }
 
   void _setVrms02(String newValue) {
@@ -591,10 +596,12 @@ class CalibrationState extends State<CalibrationPage> {
       print('Error al setear vrms offset $e');
       handleManualError(e, stackTrace);
     }
+
+    setState(() {});
   }
 
   void updateValues(List<int> newValues) async {
-    _calValues = newValues; // actualizo los valores de la characteristic
+    _calValues = newValues;
     print('Valores actualizados: $_calValues');
 
     if (_calValues.isNotEmpty) {
@@ -679,29 +686,20 @@ class CalibrationState extends State<CalibrationPage> {
       }
     }
 
-    if (_calValues[11] == 0) {
-      regulationDone = false;
-    } else if (_calValues[11] == 1) {
-      regulationDone = true;
-    }
-
     setState(() {}); //reload the screen in each notification
   }
 
   void _subscribeToCalCharacteristic() async {
-    await myDevice.calibrationUuid.setNotifyValue(true);
+    if (!alreadySubCal) {
+      await myDevice.calibrationUuid.setNotifyValue(true);
+      alreadySubCal = true;
+    }
     final calSub =
         myDevice.calibrationUuid.onValueReceived.listen((List<int> status) {
       updateValues(status);
     });
 
     myDevice.device.cancelWhenDisconnected(calSub);
-  }
-
-  @override
-  void dispose() {
-    myDevice.calibrationUuid.setNotifyValue(false);
-    super.dispose();
   }
 
 //!Visual
@@ -733,7 +731,7 @@ class CalibrationState extends State<CalibrationPage> {
             navigatorKey.currentState?.pushReplacementNamed('/regbank');
           });
 
-          return; // Retorna según la lógica de tu app
+          return;
         },
         child: Scaffold(
           backgroundColor: const Color.fromARGB(255, 1, 18, 28),
@@ -744,23 +742,6 @@ class CalibrationState extends State<CalibrationPage> {
                   textScaler: const TextScaler.linear(1.2),
                   style: const TextStyle(color: Colors.white)),
               const SizedBox(height: 40),
-              Row(children: [
-                const Text('Regulación terminada:',
-                    style: TextStyle(color: Colors.white, fontSize: 22.0)),
-                const SizedBox(width: 40),
-                regulationDone
-                    ? const Text('SI',
-                        style: TextStyle(
-                            color: Color.fromARGB(255, 29, 163, 169),
-                            fontSize: 22.0,
-                            fontWeight: FontWeight.bold))
-                    : const Text('NO',
-                        style: TextStyle(
-                            color: Colors.red,
-                            fontSize: 22.0,
-                            fontWeight: FontWeight.bold))
-              ]),
-              const SizedBox(height: 20),
               Text.rich(
                 TextSpan(
                   children: [
@@ -892,6 +873,7 @@ class CalibrationState extends State<CalibrationPage> {
                     } else {
                       showToast('Valor ingresado invalido');
                     }
+                    _setVccInputController.clear();
                   },
                 ),
               ),
@@ -937,6 +919,7 @@ class CalibrationState extends State<CalibrationPage> {
                     } else {
                       showToast('Valor ingresado invalido');
                     }
+                    _setVrmsInputController.clear();
                   },
                 ),
               ),
@@ -974,7 +957,7 @@ class CalibrationState extends State<CalibrationPage> {
                       contentPadding: EdgeInsets.all(10.0),
                       prefixText: '(0 - 255)  ',
                       prefixStyle: TextStyle(color: Colors.white),
-                      hintText: 'Modificar VRMS02',
+                      hintText: 'Modificar VRMS',
                       hintStyle: TextStyle(color: Colors.white)),
                   onSubmitted: (value) {
                     if (int.parse(value) <= 255 && int.parse(value) >= 0) {
@@ -982,6 +965,7 @@ class CalibrationState extends State<CalibrationPage> {
                     } else {
                       showToast('Valor ingresado invalido');
                     }
+                    _setVrms02InputController.clear();
                   },
                 ),
               ),
@@ -1078,6 +1062,8 @@ class RegulationState extends State<RegulationPage> {
   final List<String> _valores = [];
   final ScrollController _scrollController = ScrollController();
   List<int> value = [];
+  bool regulationDone = false;
+
   @override
   void initState() {
     super.initState();
@@ -1089,7 +1075,6 @@ class RegulationState extends State<RegulationPage> {
   @override
   void dispose() {
     _scrollController.dispose();
-    myDevice.regulationUuid.setNotifyValue(false);
     super.dispose();
   }
 
@@ -1110,18 +1095,27 @@ class RegulationState extends State<RegulationPage> {
         j += 1;
       }
       int k = 15;
-      while (k != 25) {
+      while (k != 30) {
         int dataj = 0;
         dataj = value[k];
         dataj += value[k + 1] << 8;
         _valores.add(dataj.toString());
         k += 2;
       }
+
+      if (value[29] == 0) {
+        regulationDone = false;
+      } else if (value[29] == 1) {
+        regulationDone = true;
+      }
     });
   }
 
   void _subscribeValue() async {
-    await myDevice.regulationUuid.setNotifyValue(true);
+    if (!alreadySubReg) {
+      await myDevice.regulationUuid.setNotifyValue(true);
+      alreadySubReg = true;
+    }
     print('Me turbosuscribi a regulacion');
     final regSub =
         myDevice.regulationUuid.onValueReceived.listen((List<int> status) {
@@ -1149,12 +1143,18 @@ class RegulationState extends State<RegulationPage> {
         j += 1;
       }
       int k = 15;
-      while (k != 25) {
+      while (k != 29) {
         int dataj = 0;
         dataj = data[k];
         dataj += data[k + 1] << 8;
         _valores.add(dataj.toString());
         k += 2;
+      }
+
+      if (data[29] == 0) {
+        regulationDone = false;
+      } else if (data[29] == 1) {
+        regulationDone = true;
       }
     });
   }
@@ -1191,6 +1191,10 @@ class RegulationState extends State<RegulationPage> {
         return 'Resistencia de sensor en monoxido a 50 grados';
       case 14:
         return 'Resistencia de sensor en monoxido a x grados';
+      case 15:
+        return 'Resistencia del sensor de CH4 en aire limpio';
+      case 16:
+        return 'Resistencia del sensor de CO en aire limpio';
       default:
         return 'Error inesperado';
     }
@@ -1229,21 +1233,45 @@ class RegulationState extends State<RegulationPage> {
         },
         child: Center(
           child: Scaffold(
-            backgroundColor: const Color.fromARGB(255, 1, 18, 28),
-            body: ListView.builder(
-              itemCount: _valores.length,
-              itemBuilder: (context, index) {
-                return ListTile(
-                  title: Text(textToShow(index),
-                      style: const TextStyle(
-                          color: Colors.white, fontWeight: FontWeight.bold, fontSize: 20)),
-                  subtitle: Text(_valores[index],
-                      style: const TextStyle(
-                          color: Color.fromARGB(255, 29, 163, 169), fontSize: 30)),
-                );
-              },
-            ),
-          ),
+              backgroundColor: const Color.fromARGB(255, 1, 18, 28),
+              body: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Row(children: [
+                    const Text('Regulación hecha:',
+                        style: TextStyle(color: Colors.white, fontSize: 22.0)),
+                    const SizedBox(width: 40),
+                    regulationDone
+                        ? const Text('SI',
+                            style: TextStyle(
+                                color: Color.fromARGB(255, 29, 163, 169),
+                                fontSize: 22.0,
+                                fontWeight: FontWeight.bold))
+                        : const Text('NO',
+                            style: TextStyle(
+                                color: Colors.red,
+                                fontSize: 22.0,
+                                fontWeight: FontWeight.bold))
+                  ]),
+                  const SizedBox(height: 20),
+                  ListView.builder(
+                    itemCount: _valores.length,
+                    itemBuilder: (context, index) {
+                      return ListTile(
+                        title: Text(textToShow(index),
+                            style: const TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 20)),
+                        subtitle: Text(_valores[index],
+                            style: const TextStyle(
+                                color: Color.fromARGB(255, 29, 163, 169),
+                                fontSize: 30)),
+                      );
+                    },
+                  ),
+                ],
+              )),
         ));
   }
 }
@@ -1500,7 +1528,6 @@ class OTAState extends State<OTAPage> {
           await file.delete();
         }
 
-
         var req = await dio.get(url);
         var bytes = req.data;
 
@@ -1551,7 +1578,10 @@ class OTAState extends State<OTAPage> {
 
   void subToProgress() async {
     print('Entre aquis mismito');
-    await myDevice.otaUuid.setNotifyValue(true);
+    if (!alreadySubOta) {
+      await myDevice.otaUuid.setNotifyValue(true);
+      alreadySubOta = true;
+    }
     final otaSub = myDevice.otaUuid.onValueReceived.listen((event) {
       try {
         var fun = utf8.decode(event);
@@ -1624,7 +1654,6 @@ class OTAState extends State<OTAPage> {
   void dispose() {
     otaPIC = false;
     atemp = false;
-    myDevice.otaUuid.setNotifyValue(false);
     super.dispose();
   }
 

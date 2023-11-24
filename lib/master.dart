@@ -19,6 +19,10 @@ List<String> numbersToCheck = [];
 List<String> statusOfDevices = [];
 String prevText = '';
 late List<String> pikachu;
+late BluetoothDevice device;
+bool alreadySubReg = false;
+bool alreadySubCal = false;
+bool alreadySubOta = false;
 
 final flutterBluePlus = FlutterBluePlus();
 final dio = Dio();
@@ -291,8 +295,6 @@ Stacktrace: ${details.stack}
   ''';
 }
 
-late BluetoothDevice device;
-
 void sendReportOnWhatsApp(String filePath) async {
   const text = 'Attached is the error report';
   final file = File(filePath);
@@ -319,7 +321,7 @@ $stackTrace
 
 void updateDiagnosisResult(String key, String result) {
   print('Actualicé la verga esta');
-  deviceDiagnosisResults.addAll({key : result});
+  deviceDiagnosisResults.addAll({key: result});
   print(deviceDiagnosisResults);
 }
 
