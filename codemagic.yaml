@@ -14,7 +14,7 @@ workflows:
         script: flutter build ios --release --no-codesign
       - name: Upload Artifacts to GitHub
         script: |
-          curl -X POST https://api.github.com/repos/Azthriel/REPO/Ing_app_57 \
+          curl -X POST https://api.github.com/repos/Azthriel/Ing_app_57/releases \
           -H "Authorization: token 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" \
           -d '{"tag_name": "v1.0.0", "target_commitish": "master", "name": "v1.0.0", "body": "Description of the release", "draft": false, "prerelease": false}'
     artifacts:
