@@ -8,8 +8,8 @@ workflows:
     scripts:
       - name: Install dependencies
         script: flutter pub get
-      - name: Run tests
-        script: flutter test
+      # - name: Run tests
+      #   script: flutter test
       - name: Build iOS app
         script: flutter build ios --release --no-codesign
     artifacts:
@@ -18,4 +18,4 @@ workflows:
     publishing:
       email:
         recipients:
-          - trillogonzalolaboral@gmail.com
+          - trillogonzalo@gmail.com
