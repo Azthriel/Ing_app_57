@@ -250,7 +250,7 @@ class MyDeviceTabsState extends State<MyDeviceTabs> {
                                           withoutResponse: false);
                                       print('a');
                                     } catch (e, stackTrace) {
-                                      print('Fatal error 1 $e');
+                                      print('Fatal error 1 $e $stackTrace');
                                       handleManualError(e, stackTrace);
                                     }
                                     Navigator.pop(context);
@@ -295,7 +295,7 @@ class MyDeviceTabsState extends State<MyDeviceTabs> {
 // CARACTERISTICAS //OTRA PAGINA
 
 class CharPage extends StatefulWidget {
-  const CharPage({Key? key}) : super(key: key);
+  const CharPage({super.key});
   @override
   CharState createState() => CharState();
 }
@@ -322,7 +322,7 @@ class CharState extends State<CharPage> {
     } //57_IOT[5]($dataToSend)
     catch (e, stackTrace) {
       print('Error al enviar el numero de serie $e $stackTrace');
-      // handleManualError(e, stackTrace);
+      handleManualError(e, stackTrace);
     }
     navigatorKey.currentState?.pushReplacementNamed('/regbank');
   }
@@ -491,7 +491,7 @@ class CharState extends State<CharPage> {
 //CALIBRACION //ANOTHER PAGE
 
 class CalibrationPage extends StatefulWidget {
-  const CalibrationPage({Key? key}) : super(key: key);
+  const CalibrationPage({super.key});
   @override
   CalibrationState createState() => CalibrationState();
 }
@@ -553,7 +553,7 @@ class CalibrationState extends State<CalibrationPage> {
     try {
       myDevice.calibrationUuid.write(vccNewOffset);
     } catch (e, stackTrace) {
-      print('Error al escribir vcc offset $e');
+      print('Error al escribir vcc offset $e $stackTrace');
       handleManualError(e, stackTrace);
     }
 
@@ -573,7 +573,7 @@ class CalibrationState extends State<CalibrationPage> {
     try {
       myDevice.calibrationUuid.write(vrmsNewOffset);
     } catch (e, stackTrace) {
-      print('Error al setear vrms offset $e');
+      print('Error al setear vrms offset $e $stackTrace');
       handleManualError(e, stackTrace);
     }
 
@@ -593,7 +593,7 @@ class CalibrationState extends State<CalibrationPage> {
     try {
       myDevice.calibrationUuid.write(vrms02NewOffset);
     } catch (e, stackTrace) {
-      print('Error al setear vrms offset $e');
+      print('Error al setear vrms offset $e $stackTrace');
       handleManualError(e, stackTrace);
     }
 
@@ -1053,7 +1053,7 @@ class CalibrationState extends State<CalibrationPage> {
 //REGULATION //ANOTHER PAGE
 
 class RegulationPage extends StatefulWidget {
-  const RegulationPage({Key? key}) : super(key: key);
+  const RegulationPage({super.key});
   @override
   RegulationState createState() => RegulationState();
 }
@@ -1279,7 +1279,7 @@ class RegulationState extends State<RegulationPage> {
 //CONTROL //ANOTHER PAGE
 
 class ControlPage extends StatefulWidget {
-  const ControlPage({Key? key}) : super(key: key);
+  const ControlPage({super.key});
   @override
   ControlPageState createState() => ControlPageState();
 }
@@ -1294,7 +1294,7 @@ class ControlPageState extends State<ControlPage> {
       String data = '57_IOT[7](0)';
       myDevice.toolsUuid.write(data.codeUnits);
     } catch (e, stackTrace) {
-      print('Error al cortar el loop $e');
+      print('Error al cortar el loop $e $stackTrace');
       handleManualError(e, stackTrace);
     }
   }
@@ -1304,7 +1304,7 @@ class ControlPageState extends State<ControlPage> {
       final data = [value];
       myDevice.lightUuid.write(data, withoutResponse: true);
     } catch (e, stackTrace) {
-      print('Error al mandar el valor del brillo $e');
+      print('Error al mandar el valor del brillo $e $stackTrace');
       handleManualError(e, stackTrace);
     }
   }
@@ -1314,7 +1314,7 @@ class ControlPageState extends State<ControlPage> {
       String data = '57_IOT[7](1)';
       await myDevice.toolsUuid.write(data.codeUnits);
     } catch (e, stackTrace) {
-      print('Error al volver al loop $e');
+      print('Error al volver al loop $e $stackTrace');
       handleManualError(e, stackTrace);
     }
   }
@@ -1426,7 +1426,7 @@ class ControlPageState extends State<ControlPage> {
 //OTA //ANOTHER PAGE
 
 class OTAPage extends StatefulWidget {
-  const OTAPage({Key? key}) : super(key: key);
+  const OTAPage({super.key});
   @override
   OTAState createState() => OTAState();
 }
@@ -1454,7 +1454,7 @@ class OTAState extends State<OTAPage> {
       String data = '57_IOT[7](0)';
       myDevice.toolsUuid.write(data.codeUnits);
     } catch (e, stackTrace) {
-      print('Error al cortar el loop $e');
+      print('Error al cortar el loop $e $stackTrace');
       handleManualError(e, stackTrace);
     }
   }
@@ -1486,7 +1486,7 @@ class OTAState extends State<OTAPage> {
         await myDevice.toolsUuid.write(data.codeUnits);
         print('Me puse corte re kawaii');
       } catch (e, stackTrace) {
-        print('Error al enviar la OTA $e');
+        print('Error al enviar la OTA $e $stackTrace');
         handleManualError(e, stackTrace);
         showToast('Error al enviar OTA');
       }
@@ -1497,7 +1497,7 @@ class OTAState extends State<OTAPage> {
         await myDevice.toolsUuid.write(data.codeUnits);
         print('Si mandé ota');
       } catch (e, stackTrace) {
-        print('Error al enviar la OTA $e');
+        print('Error al enviar la OTA $e $stackTrace');
         handleManualError(e, stackTrace);
         showToast('Error al enviar OTA');
       }
@@ -1550,7 +1550,7 @@ class OTAState extends State<OTAPage> {
 
         sendchunk();
       } catch (e, stackTrace) {
-        print('Error al enviar la OTA $e');
+        print('Error al enviar la OTA $e $stackTrace');
         handleManualError(e, stackTrace);
         showToast("Error al enviar OTA");
       }
@@ -1562,7 +1562,7 @@ class OTAState extends State<OTAPage> {
       int mtuSize = 255;
       await writeLarge(firmwareGlobal, mtuSize);
     } catch (e, stackTrace) {
-      print('El error es: $e');
+      print('El error es: $e $stackTrace');
       handleManualError(e, stackTrace);
     }
   }
@@ -1643,7 +1643,7 @@ class OTAState extends State<OTAPage> {
           }
         }
       } catch (e, stackTrace) {
-        print('Error malevolo: $e');
+        print('Error malevolo: $e $stackTrace');
         handleManualError(e, stackTrace);
       }
     });
@@ -2290,7 +2290,7 @@ class QRScanPageState extends State<QRScanPage>
             navigatorKey.currentState!.pop(scanData.code);
           }
         } catch (e, stackTrace) {
-          print("Error: $e");
+          print("Error: $e $stackTrace");
           handleManualError(e, stackTrace);
         }
       });
@@ -2351,7 +2351,7 @@ class LoadState extends State<LoadingPage> {
 
       return Future.value(true);
     } catch (e, stackTrace) {
-      print('Error en la precarga $e');
+      print('Error en la precarga $e $stackTrace');
       handleManualError(e, stackTrace);
       return Future.value(false);
     }
@@ -2412,7 +2412,7 @@ class LoadState extends State<LoadingPage> {
 //DISCONECT //ANOTHER PAGE
 
 class DisconectPage extends StatefulWidget {
-  const DisconectPage({Key? key}) : super(key: key);
+  const DisconectPage({super.key});
   @override
   DisconectState createState() => DisconectState();
 }
@@ -2433,7 +2433,7 @@ class DisconectState extends State<DisconectPage> {
         showToast('Dispositivos desconectados exitosamente');
       });
     } catch (e, stackTrace) {
-      print('Error al desconectar a todos los usuarios $e');
+      print('Error al desconectar a todos los usuarios $e $stackTrace');
       handleManualError(e, stackTrace);
     }
   }

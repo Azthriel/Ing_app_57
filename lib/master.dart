@@ -19,7 +19,9 @@ List<String> numbersToCheck = [];
 List<String> statusOfDevices = [];
 String prevText = '';
 late List<String> pikachu;
+
 late BluetoothDevice device;
+
 bool alreadySubReg = false;
 bool alreadySubCal = false;
 bool alreadySubOta = false;
@@ -237,7 +239,7 @@ class MyDevice {
 
       return Future.value(true);
     } catch (e, stackTrace) {
-      print('Lcdtmbe $e');
+      print('Lcdtmbe $e $stackTrace');
       handleManualError(e, stackTrace);
 
       return Future.value(false);

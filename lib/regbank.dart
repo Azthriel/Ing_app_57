@@ -61,6 +61,7 @@ class Regbank extends StatelessWidget {
                           print('Unu');
                         }
                         numbersToCheck.clear();
+                        deviceDiagnosisResults.clear();
                       }),
                   IconButton(
                     icon: const Icon(
@@ -124,7 +125,7 @@ class Regbank extends StatelessWidget {
 }
 
 class RegisterTab extends StatefulWidget {
-  const RegisterTab({Key? key}) : super(key: key);
+  const RegisterTab({super.key});
   @override
   RegisterTabState createState() => RegisterTabState();
 }
@@ -177,6 +178,7 @@ class RegisterTabState extends State<RegisterTab> {
       headersProcessed.clear();
       numbersTosend.clear();
       numbersToCheck.clear();
+      deviceDiagnosisResults.clear();
       header = '';
       initialvalue = '';
       finalvalue = '';
@@ -572,6 +574,7 @@ class DiagnosisTabState extends State<DiagnosisTab> {
     setState(() {
       progressValue = 0.0;
       statusOfDevices.clear();
+      deviceDiagnosisResults.clear();
       version.clear();
       isDiagnosing = false;
     });
@@ -630,6 +633,7 @@ class DiagnosisTabState extends State<DiagnosisTab> {
     setState(() {
       progressValue = 0.0;
       statusOfDevices.clear();
+      deviceDiagnosisResults.clear();
       ppmch4.clear();
       isDiagnosing = false;
     });
@@ -688,6 +692,7 @@ class DiagnosisTabState extends State<DiagnosisTab> {
     setState(() {
       progressValue = 0.0;
       statusOfDevices.clear();
+      deviceDiagnosisResults.clear();
       ppmco.clear();
       isDiagnosing = false;
     });
@@ -931,6 +936,7 @@ class RegulationTabState extends State<RegulationTab> {
       individualProgressValue = 0.0;
       regulationValues.clear();
       numbersToCheck.clear();
+
       isRegulating = false;
     });
   }
@@ -1105,7 +1111,7 @@ class RegulationTabState extends State<RegulationTab> {
 }
 
 class ScanTab extends StatefulWidget {
-  const ScanTab({Key? key}) : super(key: key);
+  const ScanTab({super.key});
   @override
   ScanTabState createState() => ScanTabState();
 }
@@ -1141,7 +1147,8 @@ class ScanTabState extends State<ScanTab> {
         await FlutterBluePlus.startScan(
             withKeywords: ['Detector'],
             timeout: const Duration(seconds: 30),
-            androidUsesFineLocation: true);
+            androidUsesFineLocation: true,
+            continuousUpdates: true);
         FlutterBluePlus.scanResults.listen((results) {
           for (ScanResult result in results) {
             if (!devices
@@ -1156,24 +1163,23 @@ class ScanTabState extends State<ScanTab> {
           }
         });
       } catch (e, stackTrace) {
-        print('Error al escanear $e');
+        print('Error al escanear $e $stackTrace');
         handleManualError(e, stackTrace);
       }
     }
   }
 
-  void connectToDevice(BluetoothDevice device) async {
+  void connectToDevice(BluetoothDevice deviceSelected) async {
     try {
-      FlutterBluePlus.stopScan();
-      await device.connect(timeout: const Duration(seconds: 6));
-      deviceName = device.platformName;
-      myDeviceid = device.remoteId.toString();
+      await deviceSelected.connect(timeout: const Duration(seconds: 6));
+      deviceName = deviceSelected.platformName;
+      myDeviceid = deviceSelected.remoteId.toString();
 
       print('Teoricamente estoy conectado');
 
       MyDevice myDevice = MyDevice();
 
-      device.connectionState.listen((BluetoothConnectionState state) {
+      deviceSelected.connectionState.listen((BluetoothConnectionState state) {
         print('Estado de conexión: $state');
         switch (state) {
           case BluetoothConnectionState.disconnected:
@@ -1196,7 +1202,8 @@ class ScanTabState extends State<ScanTab> {
             {
               if (!connectionFlag) {
                 connectionFlag = true;
-                myDevice.setup(device).then((valor) {
+                FlutterBluePlus.stopScan();
+                myDevice.setup(deviceSelected).then((valor) {
                   print('RETORNASHE $valor');
                   if (valor) {
                     navigatorKey.currentState?.pushReplacementNamed('/loading');
@@ -1221,8 +1228,8 @@ class ScanTabState extends State<ScanTab> {
         print('Error específico de Android con código 133: $e');
         showToast('Error de conexión, intentelo nuevamente');
       } else {
-        print('Error al conectar: $e');
-        showToast('Error al conectar');
+        print('Error al conectar: $e $stackTrace');
+        showToast('Error al conectar, intentelo nuevamente');
         handleManualError(e, stackTrace);
       }
     }
@@ -1318,7 +1325,7 @@ class ScanTabState extends State<ScanTab> {
 //UPGRADE TAB //Masive updates tab
 
 class UpdateTab extends StatefulWidget {
-  const UpdateTab({Key? key}) : super(key: key);
+  const UpdateTab({super.key});
   @override
   UpdateTabState createState() => UpdateTabState();
 }

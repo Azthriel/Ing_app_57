@@ -27,7 +27,7 @@ void main() {
 }
 
 class MyApp extends StatefulWidget {
-  const MyApp({Key? key}) : super(key: key);
+  const MyApp({super.key});
   @override
   MyAppState createState() => MyAppState();
 }
@@ -97,7 +97,7 @@ class MyAppState extends State<MyApp> {
 //PERMISOS //PRIMERA PARTE
 
 class PermissionHandler extends StatefulWidget {
-  const PermissionHandler({Key? key}) : super(key: key);
+  const PermissionHandler({super.key});
 
   @override
   PermissionHandlerState createState() => PermissionHandlerState();
