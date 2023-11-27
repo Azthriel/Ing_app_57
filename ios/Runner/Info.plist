@@ -47,5 +47,30 @@
 	<true/>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
+
+    <!-- Permiso para Bluetooth -->
+    <key>NSBluetoothPeripheralUsageDescription</key>
+    <string>Esta aplicación necesita acceder a Bluetooth para conectarse a dispositivos externos.</string>
+
+    <!-- Permiso para Bluetooth Always Usage (si tu aplicación necesita escanear Bluetooth en segundo plano) -->
+    <key>NSBluetoothAlwaysUsageDescription</key>
+    <string>Esta aplicación necesita acceder a Bluetooth en todo momento para conectarse a dispositivos externos.</string>
+
+    <!-- Permiso para ubicación cuando la aplicación está en uso -->
+    <key>NSLocationWhenInUseUsageDescription</key>
+    <string>Esta aplicación necesita acceder a tu ubicación para mejorar la conectividad Bluetooth.</string>
+
+    <!-- Permiso para ubicación siempre (si tu aplicación necesita la ubicación en segundo plano) -->
+    <key>NSLocationAlwaysUsageDescription</key>
+    <string>Esta aplicación necesita acceder a tu ubicación en todo momento para mejorar la conectividad Bluetooth.</string>
+
+    <!-- Permiso para almacenamiento externo (lectura) -->
+    <key>NSPhotoLibraryAddUsageDescription</key>
+    <string>Esta aplicación necesita acceder a tus fotos para guardar imágenes.</string>
+
+    <!-- Permiso para almacenamiento externo (escritura) -->
+    <key>NSPhotoLibraryUsageDescription</key>
+    <string>Esta aplicación necesita acceder a tus fotos para seleccionar imágenes.</string>
+
 </dict>
 </plist>
