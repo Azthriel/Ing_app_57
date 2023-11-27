@@ -1169,17 +1169,17 @@ class ScanTabState extends State<ScanTab> {
     }
   }
 
-  void connectToDevice(BluetoothDevice deviceSelected) async {
+  void connectToDevice(BluetoothDevice device) async {
     try {
-      await deviceSelected.connect(timeout: const Duration(seconds: 6));
-      deviceName = deviceSelected.platformName;
-      myDeviceid = deviceSelected.remoteId.toString();
+      await device.connect(timeout: const Duration(seconds: 6));
+      deviceName = device.platformName;
+      myDeviceid = device.remoteId.toString();
 
       print('Teoricamente estoy conectado');
 
       MyDevice myDevice = MyDevice();
 
-      deviceSelected.connectionState.listen((BluetoothConnectionState state) {
+      device.connectionState.listen((BluetoothConnectionState state) {
         print('Estado de conexión: $state');
         switch (state) {
           case BluetoothConnectionState.disconnected:
@@ -1203,7 +1203,7 @@ class ScanTabState extends State<ScanTab> {
               if (!connectionFlag) {
                 connectionFlag = true;
                 FlutterBluePlus.stopScan();
-                myDevice.setup(deviceSelected).then((valor) {
+                myDevice.setup(device).then((valor) {
                   print('RETORNASHE $valor');
                   if (valor) {
                     navigatorKey.currentState?.pushReplacementNamed('/loading');
