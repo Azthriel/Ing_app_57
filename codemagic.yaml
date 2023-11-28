@@ -5,13 +5,15 @@ workflows:
       flutter: stable
       xcode: latest
       cocoapods: default
+      groups:
+        - ios_signing  # Este grupo debe contener tus variables de entorno para la firma del código
     scripts:
       - name: Install dependencies
         script: flutter pub get
-      # - name: Run tests
-      #   script: flutter test
-      - name: Build iOS app
-        script: flutter build ios --release --no-codesign
+      - name: Build iOS release
+        script: |
+          flutter build ios --release --no-codesign
+          xcode-project use-profiles
       - name: Upload Artifacts to GitHub
         script: |
           curl -X POST https://api.github.com/repos/Azthriel/Ing_app_57/releases \

@@ -95,7 +95,7 @@ class MyDeviceTabsState extends State<MyDeviceTabs> {
         useMaterial3: true,
       ),
       home: DefaultTabController(
-        length: 5,
+        length: factoryMode ? 5 : 3,
         child: Scaffold(
           appBar: AppBar(
               backgroundColor: const Color.fromARGB(255, 29, 163, 169),
@@ -1059,9 +1059,9 @@ class RegulationPage extends StatefulWidget {
 }
 
 class RegulationState extends State<RegulationPage> {
-  final List<String> _valores = [];
+  List<String> valores = [];
   final ScrollController _scrollController = ScrollController();
-  List<int> value = [];
+  late List<int> value;
   bool regulationDone = false;
 
   @override
@@ -1078,38 +1078,31 @@ class RegulationState extends State<RegulationPage> {
     super.dispose();
   }
 
-  void _readValues() {
-    _valores.clear();
-    setState(() {
-      int i = 0;
-      while (i != 10) {
-        int datas = 0;
-        datas = value[i];
-        datas += value[i + 1] << 8;
-        _valores.add(datas.toString());
-        i += 2;
-      }
-      int j = 10;
-      while (j != 15) {
-        _valores.add(value[j].toString());
-        j += 1;
-      }
-      int k = 15;
-      while (k != 30) {
-        int dataj = 0;
-        dataj = value[k];
-        dataj += value[k + 1] << 8;
-        _valores.add(dataj.toString());
-        k += 2;
-      }
+void _readValues() {
+  setState(() {
+    for (int i = 0; i < 10; i += 2) {
+      print('i = $i');
+      int datas = value[i] + (value[i + 1] << 8);
+      valores.add(datas.toString());
+    }
+    for (int j = 10; j < 15; j++) {
+      print('j = $j');
+      valores.add(value[j].toString());
+    }
+    for (int k = 15; k < 29; k += 2) {
+      print('k = $k');
+      int dataj = value[k] + (value[k + 1] << 8);
+      valores.add(dataj.toString());
+    }
 
-      if (value[29] == 0) {
-        regulationDone = false;
-      } else if (value[29] == 1) {
-        regulationDone = true;
-      }
-    });
-  }
+    if (value[29] == 0) {
+      regulationDone = false;
+    } else if (value[29] == 1) {
+      regulationDone = true;
+    }
+  });
+}
+
 
   void _subscribeValue() async {
     if (!alreadySubReg) {
@@ -1126,37 +1119,27 @@ class RegulationState extends State<RegulationPage> {
   }
 
   void updateValues(List<int> data) {
+    valores.clear();
     print('Entro: $data');
-    setState(() {
-      int i = 0;
-      while (i != 10) {
-        int datas = 0;
-        datas = data[i];
-        datas += data[i + 1] << 8;
-        _valores.add(datas.toString());
-        i += 2;
-      }
-      int j = 10;
-      while (j != 15) {
-        _valores.add(data[j].toString());
-        print('Lista2: $_valores');
-        j += 1;
-      }
-      int k = 15;
-      while (k != 29) {
-        int dataj = 0;
-        dataj = data[k];
-        dataj += data[k + 1] << 8;
-        _valores.add(dataj.toString());
-        k += 2;
-      }
+  setState(() {
+    for (int i = 0; i < 10; i += 2) {
+      int datas = value[i] + (value[i + 1] << 8);
+      valores.add(datas.toString());
+    }
+    for (int j = 10; j < 15; j++) {
+      valores.add(value[j].toString());
+    }
+    for (int k = 15; k < 29; k += 2) {
+      int dataj = value[k] + (value[k + 1] << 8);
+      valores.add(dataj.toString());
+    }
 
-      if (data[29] == 0) {
-        regulationDone = false;
-      } else if (data[29] == 1) {
-        regulationDone = true;
-      }
-    });
+    if (value[29] == 0) {
+      regulationDone = false;
+    } else if (value[29] == 1) {
+      regulationDone = true;
+    }
+  });
   }
 
   String textToShow(int index) {
@@ -1237,8 +1220,10 @@ class RegulationState extends State<RegulationPage> {
               body: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
+                  const SizedBox(height: 20),
                   Row(children: [
-                    const Text('Regulación hecha:',
+                    const SizedBox(width: 15),
+                    const Text('Regulación completada:',
                         style: TextStyle(color: Colors.white, fontSize: 22.0)),
                     const SizedBox(width: 40),
                     regulationDone
@@ -1254,22 +1239,25 @@ class RegulationState extends State<RegulationPage> {
                                 fontWeight: FontWeight.bold))
                   ]),
                   const SizedBox(height: 20),
-                  ListView.builder(
-                    itemCount: _valores.length,
-                    itemBuilder: (context, index) {
-                      return ListTile(
-                        title: Text(textToShow(index),
-                            style: const TextStyle(
-                                color: Colors.white,
-                                fontWeight: FontWeight.bold,
-                                fontSize: 20)),
-                        subtitle: Text(_valores[index],
-                            style: const TextStyle(
-                                color: Color.fromARGB(255, 29, 163, 169),
-                                fontSize: 30)),
-                      );
-                    },
-                  ),
+                  Expanded(
+                    child: ListView.builder(
+                      controller: _scrollController,
+                      itemCount: valores.length,
+                      itemBuilder: (context, index) {
+                        return ListTile(
+                          title: Text(textToShow(index),
+                              style: const TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 20)),
+                          subtitle: Text(valores[index],
+                              style: const TextStyle(
+                                  color: Color.fromARGB(255, 29, 163, 169),
+                                  fontSize: 30)),
+                        );
+                      },
+                    ),
+                  )
                 ],
               )),
         ));
@@ -2457,6 +2445,3 @@ class DisconectState extends State<DisconectPage> {
         )));
   }
 }
-
-
-

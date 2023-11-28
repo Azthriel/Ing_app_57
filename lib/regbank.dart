@@ -35,7 +35,7 @@ class Regbank extends StatelessWidget {
               tabs: [
                 Tab(icon: Icon(Icons.bluetooth_searching)),
                 Tab(icon: Icon(Icons.app_registration)),
-                Tab(icon: Icon(Icons.catching_pokemon)),
+                Tab(icon: Icon(Icons.assignment)),
                 Tab(icon: Icon(Icons.dew_point)),
                 Tab(
                   icon: Icon(Icons.update),
