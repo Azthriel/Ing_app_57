@@ -251,7 +251,8 @@ class MyDeviceTabsState extends State<MyDeviceTabs> {
                                       print('a');
                                     } catch (e, stackTrace) {
                                       print('Fatal error 1 $e $stackTrace');
-                                      handleManualError(e, stackTrace);
+                                      showToast('Error al borrar NVS');
+                                      // handleManualError(e, stackTrace);
                                     }
                                     Navigator.pop(context);
                                   },
@@ -322,7 +323,8 @@ class CharState extends State<CharPage> {
     } //57_IOT[5]($dataToSend)
     catch (e, stackTrace) {
       print('Error al enviar el numero de serie $e $stackTrace');
-      handleManualError(e, stackTrace);
+      showToast('Error al cambiar el número de serie');
+      // handleManualError(e, stackTrace);
     }
     navigatorKey.currentState?.pushReplacementNamed('/regbank');
   }
@@ -554,7 +556,8 @@ class CalibrationState extends State<CalibrationPage> {
       myDevice.calibrationUuid.write(vccNewOffset);
     } catch (e, stackTrace) {
       print('Error al escribir vcc offset $e $stackTrace');
-      handleManualError(e, stackTrace);
+      showToast('Error al escribir vcc offset');
+      // handleManualError(e, stackTrace);
     }
 
     setState(() {});
@@ -574,7 +577,8 @@ class CalibrationState extends State<CalibrationPage> {
       myDevice.calibrationUuid.write(vrmsNewOffset);
     } catch (e, stackTrace) {
       print('Error al setear vrms offset $e $stackTrace');
-      handleManualError(e, stackTrace);
+      showToast('Error al setear vrms offset');
+      // handleManualError(e, stackTrace);
     }
 
     setState(() {});
@@ -594,7 +598,8 @@ class CalibrationState extends State<CalibrationPage> {
       myDevice.calibrationUuid.write(vrms02NewOffset);
     } catch (e, stackTrace) {
       print('Error al setear vrms offset $e $stackTrace');
-      handleManualError(e, stackTrace);
+      showToast('Error al setear vrms02 offset');
+      // handleManualError(e, stackTrace);
     }
 
     setState(() {});
@@ -1283,7 +1288,7 @@ class ControlPageState extends State<ControlPage> {
       myDevice.toolsUuid.write(data.codeUnits);
     } catch (e, stackTrace) {
       print('Error al cortar el loop $e $stackTrace');
-      handleManualError(e, stackTrace);
+      // handleManualError(e, stackTrace);
     }
   }
 
@@ -1293,7 +1298,7 @@ class ControlPageState extends State<ControlPage> {
       myDevice.lightUuid.write(data, withoutResponse: true);
     } catch (e, stackTrace) {
       print('Error al mandar el valor del brillo $e $stackTrace');
-      handleManualError(e, stackTrace);
+      // handleManualError(e, stackTrace);
     }
   }
 
@@ -1303,7 +1308,7 @@ class ControlPageState extends State<ControlPage> {
       await myDevice.toolsUuid.write(data.codeUnits);
     } catch (e, stackTrace) {
       print('Error al volver al loop $e $stackTrace');
-      handleManualError(e, stackTrace);
+      // handleManualError(e, stackTrace);
     }
   }
 
@@ -1443,7 +1448,7 @@ class OTAState extends State<OTAPage> {
       myDevice.toolsUuid.write(data.codeUnits);
     } catch (e, stackTrace) {
       print('Error al cortar el loop $e $stackTrace');
-      handleManualError(e, stackTrace);
+      // handleManualError(e, stackTrace);
     }
   }
 
@@ -1475,7 +1480,7 @@ class OTAState extends State<OTAPage> {
         print('Me puse corte re kawaii');
       } catch (e, stackTrace) {
         print('Error al enviar la OTA $e $stackTrace');
-        handleManualError(e, stackTrace);
+        // handleManualError(e, stackTrace);
         showToast('Error al enviar OTA');
       }
       showToast('Enviando OTA PIC...');
@@ -1486,7 +1491,7 @@ class OTAState extends State<OTAPage> {
         print('Si mandé ota');
       } catch (e, stackTrace) {
         print('Error al enviar la OTA $e $stackTrace');
-        handleManualError(e, stackTrace);
+        // handleManualError(e, stackTrace);
         showToast('Error al enviar OTA');
       }
       showToast('Enviando OTA WiFi...');
@@ -1539,7 +1544,7 @@ class OTAState extends State<OTAPage> {
         sendchunk();
       } catch (e, stackTrace) {
         print('Error al enviar la OTA $e $stackTrace');
-        handleManualError(e, stackTrace);
+        // handleManualError(e, stackTrace);
         showToast("Error al enviar OTA");
       }
     }
@@ -1551,7 +1556,8 @@ class OTAState extends State<OTAPage> {
       await writeLarge(firmwareGlobal, mtuSize);
     } catch (e, stackTrace) {
       print('El error es: $e $stackTrace');
-      handleManualError(e, stackTrace);
+      showToast('Error al enviar chunk');
+      // handleManualError(e, stackTrace);
     }
   }
 
@@ -1632,14 +1638,26 @@ class OTAState extends State<OTAPage> {
         }
       } catch (e, stackTrace) {
         print('Error malevolo: $e $stackTrace');
-        handleManualError(e, stackTrace);
+        // handleManualError(e, stackTrace);
+        showToast('Error al actualizar progreso');
       }
     });
     myDevice.device.cancelWhenDisconnected(otaSub);
   }
 
+  void goodbye() async {
+    try {
+      String data = '57_IOT[7](1)';
+      await myDevice.toolsUuid.write(data.codeUnits);
+    } catch (e, stackTrace) {
+      print('Error al volver al loop $e $stackTrace');
+      // handleManualError(e, stackTrace);
+    }
+  }
+
   @override
   void dispose() {
+    goodbye();
     otaPIC = false;
     atemp = false;
     super.dispose();
@@ -2279,7 +2297,8 @@ class QRScanPageState extends State<QRScanPage>
           }
         } catch (e, stackTrace) {
           print("Error: $e $stackTrace");
-          handleManualError(e, stackTrace);
+          showToast('Error al leer QR');
+          // handleManualError(e, stackTrace);
         }
       });
     });
@@ -2340,7 +2359,8 @@ class LoadState extends State<LoadingPage> {
       return Future.value(true);
     } catch (e, stackTrace) {
       print('Error en la precarga $e $stackTrace');
-      handleManualError(e, stackTrace);
+      showToast('Error en la precarga');
+      // handleManualError(e, stackTrace);
       return Future.value(false);
     }
   }
@@ -2422,7 +2442,7 @@ class DisconectState extends State<DisconectPage> {
       });
     } catch (e, stackTrace) {
       print('Error al desconectar a todos los usuarios $e $stackTrace');
-      handleManualError(e, stackTrace);
+      // handleManualError(e, stackTrace);
     }
   }
 

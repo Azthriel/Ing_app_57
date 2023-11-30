@@ -238,7 +238,7 @@ class MyDevice {
       return Future.value(true);
     } catch (e, stackTrace) {
       print('Lcdtmbe $e $stackTrace');
-      handleManualError(e, stackTrace);
+      // handleManualError(e, stackTrace);
 
       return Future.value(false);
     }

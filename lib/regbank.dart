@@ -124,6 +124,8 @@ class Regbank extends StatelessWidget {
   }
 }
 
+//REGISTER TAB //Upload the devices into the sheet
+
 class RegisterTab extends StatefulWidget {
   const RegisterTab({super.key});
   @override
@@ -340,6 +342,8 @@ class RegisterTabState extends State<RegisterTab> {
         ));
   }
 }
+
+//DIAGNOSIS TAB //Ask for the state of the devices
 
 class DiagnosisTab extends StatefulWidget {
   const DiagnosisTab({super.key});
@@ -828,6 +832,8 @@ class DiagnosisTabState extends State<DiagnosisTab> {
   }
 }
 
+//REGULATION TAB //Reg in the regbank
+
 class RegulationTab extends StatefulWidget {
   const RegulationTab({super.key});
 
@@ -1110,6 +1116,8 @@ class RegulationTabState extends State<RegulationTab> {
   }
 }
 
+//SCAN TAB //Scan and connection tab
+
 class ScanTab extends StatefulWidget {
   const ScanTab({super.key});
   @override
@@ -1164,7 +1172,8 @@ class ScanTabState extends State<ScanTab> {
         });
       } catch (e, stackTrace) {
         print('Error al escanear $e $stackTrace');
-        handleManualError(e, stackTrace);
+        showToast('Error al escanear, intentelo nuevamente');
+        // handleManualError(e, stackTrace);
       }
     }
   }
@@ -1230,7 +1239,7 @@ class ScanTabState extends State<ScanTab> {
       } else {
         print('Error al conectar: $e $stackTrace');
         showToast('Error al conectar, intentelo nuevamente');
-        handleManualError(e, stackTrace);
+        // handleManualError(e, stackTrace);
       }
     }
   }
@@ -1490,7 +1499,7 @@ class UpdateTabState extends State<UpdateTab> {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               ElevatedButton(
-                  onPressed: () => updatePics,
+                  onPressed: () => updatePics(),
                   style: ButtonStyle(
                       backgroundColor: MaterialStateProperty.all<Color>(
                           const Color.fromARGB(255, 29, 163, 169)),
