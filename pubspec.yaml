@@ -13,7 +13,7 @@ dependencies:
   permission_handler: ^11.1.0
   fluttertoast: ^8.2.2
   path_provider: ^2.0.15
-  flutter_blue_plus: ^1.29.6
+  flutter_blue_plus: ^1.29.12
   qr_code_scanner: ^1.0.1
   share: ^2.0.4
   easy_refresh: ^3.3.2+4
@@ -25,14 +25,19 @@ dev_dependencies:
 
   flutter_lints: ^3.0.1
 
-  flutter_launcher_icons: ^0.13.1
+  icons_launcher: ^2.1.7
 
-flutter_launcher_icons:
-  android: true
-  ios: true
-  remove_alpha_ios: true
-  min_sdk_android: 21
-  image_path: "icon/iconosky.png"
+
+icons_launcher:
+  image_path: 'assets/iconosky.png'
+  platforms:
+    android:
+      enable: true
+      image_path: 'assets/iconosky.png'
+      adaptive_background_image: 'assets/background.png'
+      adaptive_foreground_image: 'assets/iconosky.png'
+    ios:
+      enable: true
 
 
 flutter:
@@ -41,3 +46,5 @@ flutter:
 
   assets:
     - assets/ingAppLogo.png
+    - assets/iconosky.png
+    - assets/background.png

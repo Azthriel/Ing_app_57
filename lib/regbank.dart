@@ -1063,6 +1063,8 @@ class RegulationTabState extends State<RegulationTab> {
               SizedBox(
                   width: 300,
                   child: TextField(
+                    style: const TextStyle(
+                        color: Color.fromARGB(255, 255, 255, 255)),
                     controller: regPointController,
                     keyboardType: TextInputType.number,
                     decoration: InputDecoration(
