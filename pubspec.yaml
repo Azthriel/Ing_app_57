@@ -13,7 +13,7 @@ dependencies:
   permission_handler: ^11.1.0
   fluttertoast: ^8.2.2
   path_provider: ^2.0.15
-  flutter_blue_plus: ^1.29.12
+  flutter_blue_plus: ^1.31.8
   qr_code_scanner: ^1.0.1
   share: ^2.0.4
   easy_refresh: ^3.3.2+4
@@ -35,7 +35,7 @@ icons_launcher:
       enable: true
       image_path: 'assets/iconosky.png'
       adaptive_background_image: 'assets/background.png'
-      adaptive_foreground_image: 'assets/iconosky.png'
+      adaptive_foreground_image: 'assets/iconWB.png'
     ios:
       enable: true
 
@@ -48,3 +48,4 @@ flutter:
     - assets/ingAppLogo.png
     - assets/iconosky.png
     - assets/background.png
+    - assets/iconWB.png

@@ -51,17 +51,39 @@ class Regbank extends StatelessWidget {
                         size: 24.0,
                         semanticLabel: 'Wipe icon',
                       ),
-                      onPressed: () async {
-                        String url =
-                            'https://script.google.com/macros/s/AKfycbw_yagA9NNUKmbAoVLsbg9R9sR9ZJCbNRk-TUdQDyXL3pVOUdeo7lrKFjQBIgZ2KazB/exec';
-                        final response = await dio.post(url);
-                        if (response.statusCode == 200) {
-                          print('Wipe completo');
-                        } else {
-                          print('Unu');
-                        }
-                        numbersToCheck.clear();
-                        deviceDiagnosisResults.clear();
+                      onPressed: () {
+                        showDialog(
+                          context: navigatorKey.currentContext!,
+                          builder: (BuildContext context) {
+                            return AlertDialog(
+                              title: const Center(
+                                  child: Text(
+                                'Borrar datos de la hoja de calculo',
+                                style: TextStyle(
+                                    color: Colors.black,
+                                    fontWeight: FontWeight.bold),
+                              )),
+                              content:
+                                  const Text('Esta acción no puede revertirse'),
+                              actions: [
+                                TextButton(
+                                    onPressed: () async {
+                                      String url =
+                                          'https://script.google.com/macros/s/AKfycbw_yagA9NNUKmbAoVLsbg9R9sR9ZJCbNRk-TUdQDyXL3pVOUdeo7lrKFjQBIgZ2KazB/exec';
+                                      final response = await dio.post(url);
+                                      if (response.statusCode == 200) {
+                                        print('Wipe completo');
+                                      } else {
+                                        print('Unu');
+                                      }
+                                      numbersToCheck.clear();
+                                      deviceDiagnosisResults.clear();
+                                    },
+                                    child: const Text('Borrar'))
+                              ],
+                            );
+                          },
+                        );
                       }),
                   IconButton(
                     icon: const Icon(
@@ -1343,6 +1365,8 @@ class UpdateTab extends StatefulWidget {
 
 class UpdateTabState extends State<UpdateTab> {
   List<String> updateStatus = [];
+  bool login = false;
+  final TextEditingController loginController = TextEditingController();
 
   void updatePics() async {
     for (int i = 0; i < numbersToCheck.length; i++) {
@@ -1496,29 +1520,63 @@ class UpdateTabState extends State<UpdateTab> {
                       fontSize: 12,
                       backgroundColor: Colors.transparent)),
             )),
-        body: Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              ElevatedButton(
-                  onPressed: () => updatePics(),
-                  style: ButtonStyle(
-                      backgroundColor: MaterialStateProperty.all<Color>(
-                          const Color.fromARGB(255, 29, 163, 169)),
-                      foregroundColor: MaterialStateProperty.all<Color>(
-                          const Color.fromARGB(255, 255, 255, 255))),
-                  child: const Text('ACTUALIZAR PICS')),
-              const SizedBox(height: 20),
-              ElevatedButton(
-                  onPressed: () => updateEsps(),
-                  style: ButtonStyle(
-                      backgroundColor: MaterialStateProperty.all<Color>(
-                          const Color.fromARGB(255, 29, 163, 169)),
-                      foregroundColor: MaterialStateProperty.all<Color>(
-                          const Color.fromARGB(255, 255, 255, 255))),
-                  child: const Text('ACTUALIZAR ESPS')),
-            ],
-          ),
-        ));
+        body: login
+            ? Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    ElevatedButton(
+                        onPressed: () => updatePics(),
+                        style: ButtonStyle(
+                            backgroundColor: MaterialStateProperty.all<Color>(
+                                const Color.fromARGB(255, 29, 163, 169)),
+                            foregroundColor: MaterialStateProperty.all<Color>(
+                                const Color.fromARGB(255, 255, 255, 255))),
+                        child: const Text('ACTUALIZAR PICS')),
+                    const SizedBox(height: 20),
+                    ElevatedButton(
+                        onPressed: () => updateEsps(),
+                        style: ButtonStyle(
+                            backgroundColor: MaterialStateProperty.all<Color>(
+                                const Color.fromARGB(255, 29, 163, 169)),
+                            foregroundColor: MaterialStateProperty.all<Color>(
+                                const Color.fromARGB(255, 255, 255, 255))),
+                        child: const Text('ACTUALIZAR ESPS')),
+                  ],
+                ),
+              )
+            : Column(
+                children: [
+                  const SizedBox(
+                    height: 200,
+                  ),
+                  Center(
+                    child: SizedBox(
+                        width: 300,
+                        child: TextField(
+                          style: const TextStyle(
+                              color: Color.fromARGB(255, 255, 255, 255)),
+                          controller: loginController,
+                          keyboardType: TextInputType.number,
+                          decoration: const InputDecoration(
+                            labelText: 'Ingresa la contraseña',
+                            labelStyle: TextStyle(
+                                color: Color.fromARGB(255, 255, 255, 255)),
+                            hintStyle: TextStyle(
+                                color: Color.fromARGB(255, 255, 255, 255)),
+                          ),
+                          onSubmitted: (value) {
+                            if (loginController.text == '05112004') {
+                              setState(() {
+                                login = true;
+                              });
+                            } else {
+                              showToast('Contraseña equivocada');
+                            }
+                          },
+                        )),
+                  ),
+                ],
+              ));
   }
 }

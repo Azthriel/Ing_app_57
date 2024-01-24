@@ -48,6 +48,7 @@ var wifiIcon = Icons.wifi_off;
 bool connectionFlag = false;
 bool checkbleFlag = false;
 bool bluetoothOn = false;
+double sliderValue = 0.0;
 
 MaterialColor statusColor = Colors.grey;
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
@@ -201,11 +202,10 @@ class MyDevice {
 
   Future<bool> setup(BluetoothDevice connectedDevice) async {
     try {
-
       device = connectedDevice;
 
       List<BluetoothService> services =
-          await device.discoverServices(timeout: 3);
+          await device.discoverServices(timeout: 30);
       print('Los servicios: $services');
 
       BluetoothService espService = services.firstWhere(

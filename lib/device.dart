@@ -515,6 +515,7 @@ class CalibrationState extends State<CalibrationPage> {
   int _vrmsOffset = 0;
   int _vrms02Offset = 0;
   int _vccOffset = 0;
+  int tempMicro = 0;
   String rs = '';
   String rrco = '';
   int rsValue = 0;
@@ -645,11 +646,12 @@ class CalibrationState extends State<CalibrationPage> {
         _vrmsColor = const Color.fromARGB(255, 29, 163, 169);
       }
 
-      rsValue = _calValues[7];
-      rsValue += _calValues[8] << 8;
+      tempMicro = _calValues[7];
+      rsValue = _calValues[8];
+      rsValue += _calValues[9] << 8;
 
-      rrcoValue = _calValues[9];
-      rrcoValue = _calValues[10] << 8;
+      rrcoValue = _calValues[10];
+      rrcoValue = _calValues[11] << 8;
 
       if (rsValue >= 35000) {
         rsInvalid = true;
@@ -1048,6 +1050,36 @@ class CalibrationState extends State<CalibrationPage> {
                   onChangeStart: null,
                 ),
               ),
+              const SizedBox(height: 20),
+                            Text.rich(
+                TextSpan(
+                  children: [
+                    const TextSpan(
+                      text: 'Temperatura del micro: ',
+                      style: TextStyle(
+                        fontSize: 16.0,
+                        color: Colors.white,
+                      ),
+                    ),
+                    TextSpan(
+                      text: tempMicro.toString(),
+                      style: const TextStyle(
+                        fontSize: 24.0,
+                        color: Color.fromARGB(255, 29, 163, 169),
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const TextSpan(
+                      text: '°C',
+                      style: TextStyle(
+                        fontSize: 24.0,
+                        color: Color.fromARGB(255, 29, 163, 169),
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
               const SizedBox(height: 50),
             ],
           ),
@@ -1083,31 +1115,30 @@ class RegulationState extends State<RegulationPage> {
     super.dispose();
   }
 
-void _readValues() {
-  setState(() {
-    for (int i = 0; i < 10; i += 2) {
-      print('i = $i');
-      int datas = value[i] + (value[i + 1] << 8);
-      valores.add(datas.toString());
-    }
-    for (int j = 10; j < 15; j++) {
-      print('j = $j');
-      valores.add(value[j].toString());
-    }
-    for (int k = 15; k < 29; k += 2) {
-      print('k = $k');
-      int dataj = value[k] + (value[k + 1] << 8);
-      valores.add(dataj.toString());
-    }
+  void _readValues() {
+    setState(() {
+      for (int i = 0; i < 10; i += 2) {
+        print('i = $i');
+        int datas = value[i] + (value[i + 1] << 8);
+        valores.add(datas.toString());
+      }
+      for (int j = 10; j < 15; j++) {
+        print('j = $j');
+        valores.add(value[j].toString());
+      }
+      for (int k = 15; k < 29; k += 2) {
+        print('k = $k');
+        int dataj = value[k] + (value[k + 1] << 8);
+        valores.add(dataj.toString());
+      }
 
-    if (value[29] == 0) {
-      regulationDone = false;
-    } else if (value[29] == 1) {
-      regulationDone = true;
-    }
-  });
-}
-
+      if (value[29] == 0) {
+        regulationDone = false;
+      } else if (value[29] == 1) {
+        regulationDone = true;
+      }
+    });
+  }
 
   void _subscribeValue() async {
     if (!alreadySubReg) {
@@ -1126,25 +1157,25 @@ void _readValues() {
   void updateValues(List<int> data) {
     valores.clear();
     print('Entro: $data');
-  setState(() {
-    for (int i = 0; i < 10; i += 2) {
-      int datas = value[i] + (value[i + 1] << 8);
-      valores.add(datas.toString());
-    }
-    for (int j = 10; j < 15; j++) {
-      valores.add(value[j].toString());
-    }
-    for (int k = 15; k < 29; k += 2) {
-      int dataj = value[k] + (value[k + 1] << 8);
-      valores.add(dataj.toString());
-    }
+    setState(() {
+      for (int i = 0; i < 10; i += 2) {
+        int datas = value[i] + (value[i + 1] << 8);
+        valores.add(datas.toString());
+      }
+      for (int j = 10; j < 15; j++) {
+        valores.add(value[j].toString());
+      }
+      for (int k = 15; k < 29; k += 2) {
+        int dataj = value[k] + (value[k + 1] << 8);
+        valores.add(dataj.toString());
+      }
 
-    if (value[29] == 0) {
-      regulationDone = false;
-    } else if (value[29] == 1) {
-      regulationDone = true;
-    }
-  });
+      if (value[29] == 0) {
+        regulationDone = false;
+      } else if (value[29] == 1) {
+        regulationDone = true;
+      }
+    });
   }
 
   String textToShow(int index) {
@@ -1278,7 +1309,7 @@ class ControlPage extends StatefulWidget {
 }
 
 class ControlPageState extends State<ControlPage> {
-  double _sliderValue = 0.0;
+  double _sliderValue = 100.0;
 
   @override
   void initState() {
@@ -1350,55 +1381,45 @@ class ControlPageState extends State<ControlPage> {
           return; // Retorna según la lógica de tu app
         },
         child: Scaffold(
-          backgroundColor: const Color.fromARGB(255, 1, 18, 28),
-          body: Stack(
-            children: [
-              // Bombilla en el centro
-              Center(
-                child: Icon(
-                  Icons.lightbulb,
-                  size: 200,
-                  color: Colors.yellow.withOpacity(_sliderValue / 100),
-                ),
+            backgroundColor: const Color.fromARGB(255, 1, 18, 28),
+            body: Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    Icons.lightbulb,
+                    size: 200,
+                    color: Colors.yellow.withOpacity(_sliderValue / 100),
+                  ),
+                  const SizedBox(
+                    height: 30,
+                  ),
+                  _buildCustomSlider(),
+                  const SizedBox(
+                    height: 30,
+                  ),
+                  Text(
+                    'Valor del brillo: ${_sliderValue.toStringAsFixed(0)}',
+                    style: const TextStyle(fontSize: 20.0, color: Colors.white),
+                  ),
+                ],
               ),
-              // Deslizador personalizado en la esquina inferior derecha
-              Positioned(
-                bottom: 70,
-                right: 100,
-                child: _buildCustomSlider(),
-              ),
-              // Deslizador personalizado en la esquina inferior izquierda
-              Positioned(
-                bottom: 70,
-                left: 100,
-                child: _buildCustomSlider(),
-              ),
-              // Texto del valor del brillo en la parte inferior, centrado
-              Positioned(
-                bottom: 20,
-                left: MediaQuery.of(context).size.width / 2 - 100,
-                child: Text(
-                  'Valor del brillo: ${_sliderValue.toStringAsFixed(0)}',
-                  style: const TextStyle(fontSize: 20.0, color: Colors.white),
-                ),
-              ),
-            ],
-          ),
-        ));
+            )));
   }
 
   Widget _buildCustomSlider() {
-    return RotatedBox(
-      quarterTurns: 3,
+    return SizedBox(
+      width: 300,
+      height: 30,
       child: SliderTheme(
         data: SliderTheme.of(context).copyWith(
           activeTrackColor: const Color.fromARGB(255, 29, 163, 169),
-          inactiveTrackColor: const Color.fromARGB(255, 0, 168, 176),
-          trackHeight: 10.0,
+          inactiveTrackColor: const Color.fromARGB(255, 255, 255, 255),
+          trackHeight: 30.0,
           thumbColor: const Color.fromARGB(255, 29, 163, 169),
-          thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 15.0),
+          thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 0.0),
           overlayColor: const Color.fromARGB(255, 29, 163, 169).withAlpha(32),
-          overlayShape: const RoundSliderOverlayShape(overlayRadius: 35.0),
+          overlayShape: const RoundSliderOverlayShape(overlayRadius: 0.0),
         ),
         child: Slider(
           value: _sliderValue,
@@ -2015,57 +2036,7 @@ class OTAState extends State<OTAPage> {
                 ),
               ),
               const SizedBox(height: 20),
-              Padding(
-                padding: const EdgeInsets.all(8.0),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: ElevatedButton(
-                        onPressed: () => sendOTAWifi(2),
-                        style: ButtonStyle(
-                          backgroundColor: MaterialStateProperty.all<Color>(
-                              const Color.fromARGB(255, 29, 163, 169)),
-                          foregroundColor: MaterialStateProperty.all<Color>(
-                              const Color.fromARGB(255, 255, 255, 255)),
-                          shape:
-                              MaterialStateProperty.all<RoundedRectangleBorder>(
-                            RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(18.0),
-                            ),
-                          ),
-                        ),
-                        child: const Center(
-                          child: Column(
-                            children: [
-                              SizedBox(height: 10),
-                              Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  Icon(Icons.task,
-                                      size: 16,
-                                      color:
-                                          Color.fromARGB(255, 255, 255, 255)),
-                                  SizedBox(width: 20),
-                                  Icon(Icons.wifi,
-                                      size: 16,
-                                      color:
-                                          Color.fromARGB(255, 255, 255, 255)),
-                                ],
-                              ),
-                              SizedBox(height: 10),
-                              Text(
-                                'Mandar OTA testeo',
-                                textAlign: TextAlign.center,
-                              ),
-                              SizedBox(height: 10),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 20),
-                    Expanded(
-                      child: ElevatedButton(
+              SizedBox(width: 300,child: ElevatedButton(
                         onPressed: () {
                           otaPIC = true;
                           sendOTAWifi(3);
@@ -2108,11 +2079,7 @@ class OTAState extends State<OTAPage> {
                             ],
                           ),
                         ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
+                      ),)
             ],
           ),
         ),
