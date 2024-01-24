@@ -1051,7 +1051,7 @@ class CalibrationState extends State<CalibrationPage> {
                 ),
               ),
               const SizedBox(height: 20),
-                            Text.rich(
+              Text.rich(
                 TextSpan(
                   children: [
                     const TextSpan(
@@ -2036,50 +2036,50 @@ class OTAState extends State<OTAPage> {
                 ),
               ),
               const SizedBox(height: 20),
-              SizedBox(width: 300,child: ElevatedButton(
-                        onPressed: () {
-                          otaPIC = true;
-                          sendOTAWifi(3);
-                        },
-                        style: ButtonStyle(
-                          backgroundColor: MaterialStateProperty.all<Color>(
-                              const Color.fromARGB(255, 29, 163, 169)),
-                          foregroundColor: MaterialStateProperty.all<Color>(
-                              const Color.fromARGB(255, 255, 255, 255)),
-                          shape:
-                              MaterialStateProperty.all<RoundedRectangleBorder>(
-                            RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(18.0),
-                            ),
-                          ),
-                        ),
-                        child: const Center(
-                          child: Column(
+              SizedBox(
+                width: 300 ,
+                child: ElevatedButton(
+                  onPressed: () {
+                    otaPIC = true;
+                    sendOTAWifi(3);
+                  },
+                  style: ButtonStyle(
+                    backgroundColor: MaterialStateProperty.all<Color>(
+                        const Color.fromARGB(255, 29, 163, 169)),
+                    foregroundColor: MaterialStateProperty.all<Color>(
+                        const Color.fromARGB(255, 255, 255, 255)),
+                    shape: MaterialStateProperty.all<RoundedRectangleBorder>(
+                      RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(18.0),
+                      ),
+                    ),
+                  ),
+                  child: const Center(
+                    child: Column(
+                      children: [
+                        SizedBox(height: 10),
+                        Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              SizedBox(height: 10),
-                              Row(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    Icon(Icons.memory,
-                                        size: 15,
-                                        color:
-                                            Color.fromARGB(255, 255, 255, 255)),
-                                    SizedBox(width: 20),
-                                    Icon(Icons.wifi,
-                                        size: 15,
-                                        color:
-                                            Color.fromARGB(255, 255, 255, 255)),
-                                  ]),
-                              SizedBox(height: 10),
-                              Text(
-                                'Mandar OTA PIC',
-                                textAlign: TextAlign.center,
-                              ),
-                              SizedBox(height: 10),
-                            ],
-                          ),
+                              Icon(Icons.memory,
+                                  size: 15,
+                                  color: Color.fromARGB(255, 255, 255, 255)),
+                              SizedBox(width: 20),
+                              Icon(Icons.wifi,
+                                  size: 15,
+                                  color: Color.fromARGB(255, 255, 255, 255)),
+                            ]),
+                        SizedBox(height: 10),
+                        Text(
+                          'Mandar OTA PIC',
+                          textAlign: TextAlign.center,
                         ),
-                      ),)
+                        SizedBox(height: 10),
+                      ],
+                    ),
+                  ),
+                ),
+              )
             ],
           ),
         ),
