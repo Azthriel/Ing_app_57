@@ -1660,7 +1660,7 @@ class OTAState extends State<OTAPage> {
       } catch (e, stackTrace) {
         print('Error malevolo: $e $stackTrace');
         // handleManualError(e, stackTrace);
-        showToast('Error al actualizar progreso');
+        // showToast('Error al actualizar progreso');
       }
     });
     myDevice.device.cancelWhenDisconnected(otaSub);

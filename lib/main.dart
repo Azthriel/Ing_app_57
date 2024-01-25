@@ -38,7 +38,7 @@ class MyAppState extends State<MyApp> {
     super.initState();
     FlutterBluePlus.adapterState.listen((state) {
       if (state != BluetoothAdapterState.on) {
-        if (!checkbleFlag){
+        if (!checkbleFlag) {
           checkbleFlag = true;
           showDialog(
             context: navigatorKey.currentContext!,
@@ -66,7 +66,7 @@ class MyAppState extends State<MyApp> {
             },
           );
         }
-      }else if(state == BluetoothAdapterState.on){
+      } else if (state == BluetoothAdapterState.on) {
         bluetoothOn = true;
       }
     });
@@ -126,16 +126,9 @@ class PermissionHandlerState extends State<PermissionHandler> {
     }
     permissionStatus3 = await Permission.location.status;
 
-    PermissionStatus permissionStatus4 = await Permission.storage.request();
-    if (!permissionStatus4.isGranted) {
-      await Permission.storage.request();
-    }
-    permissionStatus4 = await Permission.storage.status;
-
     if (permissionStatus1.isGranted &&
         permissionStatus2.isGranted &&
-        permissionStatus3.isGranted &&
-        permissionStatus4.isGranted) {
+        permissionStatus3.isGranted) {
       return Regbank();
     } else {
       return AlertDialog(
