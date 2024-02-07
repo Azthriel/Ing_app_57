@@ -1,7 +1,7 @@
 // ignore_for_file: avoid_print
 import 'dart:convert';
 import 'package:dio/dio.dart';
-import 'device.dart';
+import 'package:qr_code_scanner/qr_code_scanner.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'dart:io' show File;
@@ -22,6 +22,8 @@ late List<String> pikachu;
 bool alreadySubReg = false;
 bool alreadySubCal = false;
 bool alreadySubOta = false;
+bool alreadySubDebug = false;
+bool alreadySubWork = false;
 
 final flutterBluePlus = FlutterBluePlus();
 final dio = Dio();
@@ -38,6 +40,8 @@ List<int> calibrationValues = [];
 List<int> regulationValues = [];
 List<int> keysValues = [];
 List<int> toolsValues = [];
+List<int> debugValues = [];
+List<int> workValues = [];
 bool isWifiConnected = false;
 bool wifilogoConnected = false;
 String textState = '';
@@ -52,6 +56,8 @@ double sliderValue = 0.0;
 
 MaterialColor statusColor = Colors.grey;
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
+
+// FUNCIONES //
 
 String getWifiErrorSintax(int errorCode) {
   switch (errorCode) {
@@ -182,69 +188,6 @@ void showToast(String message) {
       fontSize: 16.0);
 }
 
-class MyDevice {
-  static final MyDevice _singleton = MyDevice._internal();
-
-  factory MyDevice() {
-    return _singleton;
-  }
-
-  MyDevice._internal();
-
-  late BluetoothDevice device;
-  late BluetoothCharacteristic toolsUuid;
-  late BluetoothCharacteristic calibrationUuid;
-  late BluetoothCharacteristic regulationUuid;
-  late BluetoothCharacteristic lightUuid;
-  late BluetoothCharacteristic keysUuid;
-  late BluetoothCharacteristic otaUuid;
-  late BluetoothCharacteristic espServicesUuid;
-
-  Future<bool> setup(BluetoothDevice connectedDevice) async {
-    try {
-      device = connectedDevice;
-
-      List<BluetoothService> services =
-          await device.discoverServices(timeout: 30);
-      print('Los servicios: $services');
-
-      BluetoothService espService = services.firstWhere(
-          (s) => s.uuid == Guid('33e3a05a-c397-4bed-81b0-30deb11495c7'));
-
-      toolsUuid = espService.characteristics.firstWhere(
-          (c) => c.uuid == Guid('89925840-3d11-4676-bf9b-62961456b570'));
-      keysUuid = espService.characteristics.firstWhere(
-          (c) => c.uuid == Guid('db34bdb0-c04e-4c02-8401-078fb22ef46a'));
-      otaUuid = espService.characteristics.firstWhere(
-          (c) => c.uuid == Guid('6e364bda-5f52-4d58-979d-44693840d271'));
-
-      List<int> listita = await keysUuid.read();
-      String str = utf8.decode(listita);
-      var partes = str.split(':');
-      factoryMode = partes[1].contains('_F');
-
-      BluetoothService service = services.firstWhere(
-          (s) => s.uuid == Guid('dd249079-0ce8-4d11-8aa9-53de4040aec6'));
-
-      if (factoryMode) {
-        calibrationUuid = service.characteristics.firstWhere(
-            (c) => c.uuid == Guid('0147ab2a-3987-4bb8-802b-315a664eadd6'));
-        regulationUuid = service.characteristics.firstWhere(
-            (c) => c.uuid == Guid('961d1cdd-028f-47d0-aa2a-e0095e387f55'));
-      }
-      lightUuid = service.characteristics.firstWhere(
-          (c) => c.uuid == Guid('12d3c6a1-f86e-4d5b-89b5-22dc3f5c831f'));
-
-      return Future.value(true);
-    } catch (e, stackTrace) {
-      print('Lcdtmbe $e $stackTrace');
-      // handleManualError(e, stackTrace);
-
-      return Future.value(false);
-    }
-  }
-}
-
 Future<void> sendWifitoBle() async {
   MyDevice myDevice = MyDevice();
   String value = '$wifiName#$wifiPassword';
@@ -334,5 +277,264 @@ IconData getDiagnosisIcon(String diagnosisResult) {
       return Icons.close; // Ícono de X roja
     default:
       return Icons.help_outline; // Ícono de signo de pregunta
+  }
+}
+
+// CLASES //
+
+class MyDevice {
+  static final MyDevice _singleton = MyDevice._internal();
+
+  factory MyDevice() {
+    return _singleton;
+  }
+
+  MyDevice._internal();
+
+  late BluetoothDevice device;
+  late BluetoothCharacteristic toolsUuid;
+  late BluetoothCharacteristic calibrationUuid;
+  late BluetoothCharacteristic regulationUuid;
+  late BluetoothCharacteristic lightUuid;
+  late BluetoothCharacteristic keysUuid;
+  late BluetoothCharacteristic otaUuid;
+  late BluetoothCharacteristic debugUuid;
+  late BluetoothCharacteristic workUuid;
+
+  Future<bool> setup(BluetoothDevice connectedDevice) async {
+    try {
+      device = connectedDevice;
+
+      List<BluetoothService> services =
+          await device.discoverServices(timeout: 30);
+      print('Los servicios: $services');
+
+      BluetoothService espService = services.firstWhere(
+          (s) => s.uuid == Guid('33e3a05a-c397-4bed-81b0-30deb11495c7'));
+
+      toolsUuid = espService.characteristics.firstWhere(
+          (c) => c.uuid == Guid('89925840-3d11-4676-bf9b-62961456b570'));
+      keysUuid = espService.characteristics.firstWhere(
+          (c) => c.uuid == Guid('db34bdb0-c04e-4c02-8401-078fb22ef46a'));
+      otaUuid = espService.characteristics.firstWhere(
+          (c) => c.uuid == Guid('6e364bda-5f52-4d58-979d-44693840d271'));
+
+      List<int> listita = await keysUuid.read();
+      String str = utf8.decode(listita);
+      var partes = str.split(':');
+      factoryMode = partes[1].contains('_F');
+
+      BluetoothService service = services.firstWhere(
+          (s) => s.uuid == Guid('dd249079-0ce8-4d11-8aa9-53de4040aec6'));
+
+      if (factoryMode) {
+        calibrationUuid = service.characteristics.firstWhere(
+            (c) => c.uuid == Guid('0147ab2a-3987-4bb8-802b-315a664eadd6'));
+        regulationUuid = service.characteristics.firstWhere(
+            (c) => c.uuid == Guid('961d1cdd-028f-47d0-aa2a-e0095e387f55'));
+        debugUuid = service.characteristics.firstWhere(
+            (c) => c.uuid == Guid('838335a1-ff5a-4344-bfdf-38bf6730de26'));
+        workUuid = service.characteristics.firstWhere(
+            (c) => c.uuid == Guid('6869fe94-c4a2-422a-ac41-b2a7a82803e9'));
+      }
+      lightUuid = service.characteristics.firstWhere(
+          (c) => c.uuid == Guid('12d3c6a1-f86e-4d5b-89b5-22dc3f5c831f'));
+
+      return Future.value(true);
+    } catch (e, stackTrace) {
+      print('Lcdtmbe $e $stackTrace');
+      // handleManualError(e, stackTrace);
+
+      return Future.value(false);
+    }
+  }
+}
+
+class QRScanPage extends StatefulWidget {
+  const QRScanPage({super.key});
+  @override
+  QRScanPageState createState() => QRScanPageState();
+}
+
+class QRScanPageState extends State<QRScanPage>
+    with SingleTickerProviderStateMixin {
+  final GlobalKey qrKey = GlobalKey(debugLabel: 'QR');
+  Barcode? result;
+  QRViewController? controller;
+  AnimationController? animationController;
+  bool flashOn = false;
+  late Animation<double> animation;
+
+  @override
+  void initState() {
+    super.initState();
+
+    animationController = AnimationController(
+      duration: const Duration(seconds: 2),
+      vsync: this,
+    );
+
+    animation = Tween<double>(begin: 10, end: 350).animate(animationController!)
+      ..addListener(() {
+        setState(() {});
+      });
+
+    animationController!.repeat(reverse: true);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: Stack(
+        children: [
+          QRView(
+            key: qrKey,
+            onQRViewCreated: _onQRViewCreated,
+          ),
+          // Arriba
+          Positioned(
+            top: 0,
+            left: 0,
+            right: 0,
+            height: 250,
+            child: Container(
+                color: Colors.black54,
+                child: const Center(
+                  child: Text('Escanea el QR',
+                      style:
+                          TextStyle(color: Color.fromARGB(255, 29, 163, 169))),
+                )),
+          ),
+          // Abajo
+          Positioned(
+            bottom: 0,
+            left: 0,
+            right: 0,
+            height: 250,
+            child: Container(
+              color: Colors.black54,
+            ),
+          ),
+          // Izquierda
+          Positioned(
+            top: 250,
+            bottom: 250,
+            left: 0,
+            width: 50,
+            child: Container(
+              color: Colors.black54,
+            ),
+          ),
+          // Derecha
+          Positioned(
+            top: 250,
+            bottom: 250,
+            right: 0,
+            width: 50,
+            child: Container(
+              color: Colors.black54,
+            ),
+          ),
+          // Área transparente con bordes redondeados
+          Positioned(
+            top: 250,
+            left: 50,
+            right: 50,
+            bottom: 250,
+            child: Stack(
+              children: [
+                Positioned(
+                  top: animation.value,
+                  left: 0,
+                  right: 0,
+                  child: Container(
+                    height: 4,
+                    color: const Color.fromARGB(255, 29, 163, 169),
+                  ),
+                ),
+                Positioned(
+                  top: 0,
+                  left: 0,
+                  right: 0,
+                  child: Container(
+                    height: 3,
+                    color: const Color.fromARGB(255, 1, 18, 28),
+                  ),
+                ),
+                Positioned(
+                  bottom: 0,
+                  left: 0,
+                  right: 0,
+                  child: Container(
+                    height: 3,
+                    color: const Color.fromARGB(255, 1, 18, 28),
+                  ),
+                ),
+                Positioned(
+                  top: 0,
+                  bottom: 0,
+                  left: 0,
+                  child: Container(
+                    width: 3,
+                    color: const Color.fromARGB(255, 1, 18, 28),
+                  ),
+                ),
+                Positioned(
+                  top: 0,
+                  bottom: 0,
+                  right: 0,
+                  child: Container(
+                    width: 3,
+                    color: const Color.fromARGB(255, 1, 18, 28),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          // Botón de Flash
+          Positioned(
+            bottom: 20,
+            right: 20,
+            child: IconButton(
+              icon: Icon(
+                flashOn ? Icons.flash_on : Icons.flash_off,
+                color: Colors.white,
+              ),
+              onPressed: () {
+                controller?.toggleFlash();
+                setState(() {
+                  flashOn = !flashOn;
+                });
+              },
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _onQRViewCreated(QRViewController controller) {
+    this.controller = controller;
+    controller.scannedDataStream.listen((scanData) {
+      Future.delayed(const Duration(milliseconds: 800), () {
+        try {
+          if (navigatorKey.currentState != null &&
+              navigatorKey.currentState!.canPop()) {
+            navigatorKey.currentState!.pop(scanData.code);
+          }
+        } catch (e, stackTrace) {
+          print("Error: $e $stackTrace");
+          showToast('Error al leer QR');
+          // handleManualError(e, stackTrace);
+        }
+      });
+    });
+  }
+
+  @override
+  void dispose() {
+    controller?.dispose();
+    animationController?.dispose();
+    super.dispose();
   }
 }

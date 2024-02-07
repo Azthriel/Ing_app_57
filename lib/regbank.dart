@@ -1227,6 +1227,8 @@ class ScanTabState extends State<ScanTab> {
               alreadySubCal = false;
               alreadySubReg = false;
               alreadySubOta = false;
+              alreadySubDebug = false;
+              alreadySubWork = false;
               print('Razon: ${myDevice.device.disconnectReason?.description}');
               navigatorKey.currentState?.pushReplacementNamed('/regbank');
               break;

@@ -7,7 +7,6 @@ import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
-import 'package:qr_code_scanner/qr_code_scanner.dart';
 import 'master.dart';
 
 class MyDeviceTabs extends StatefulWidget {
@@ -95,7 +94,7 @@ class MyDeviceTabsState extends State<MyDeviceTabs> {
         useMaterial3: true,
       ),
       home: DefaultTabController(
-        length: factoryMode ? 5 : 3,
+        length: factoryMode ? 6 : 3,
         child: Scaffold(
           appBar: AppBar(
               backgroundColor: const Color.fromARGB(255, 29, 163, 169),
@@ -107,6 +106,7 @@ class MyDeviceTabsState extends State<MyDeviceTabs> {
                   if (factoryMode) ...[
                     const Tab(icon: Icon(Icons.settings)),
                     const Tab(icon: Icon(Icons.tune)),
+                    const Tab(icon: Icon(Icons.stars_rounded)),
                   ],
                   const Tab(icon: Icon(Icons.lightbulb_sharp)),
                   const Tab(icon: Icon(Icons.send)),
@@ -282,6 +282,7 @@ class MyDeviceTabsState extends State<MyDeviceTabs> {
               if (factoryMode) ...[
                 const CalibrationPage(),
                 const RegulationPage(),
+                const DebugPage(),
               ],
               const ControlPage(),
               const OTAPage(),
@@ -293,7 +294,7 @@ class MyDeviceTabsState extends State<MyDeviceTabs> {
   }
 }
 
-// CARACTERISTICAS //OTRA PAGINA
+// CARACTERISTICAS //ANOTHER PAGE
 
 class CharPage extends StatefulWidget {
   const CharPage({super.key});
@@ -523,13 +524,18 @@ class CalibrationState extends State<CalibrationPage> {
   bool rsInvalid = false;
   bool rrcoInvalid = false;
   bool rsOver35k = false;
+  int ppmCO = 0;
+  int ppmCH4 = 0;
 
   @override
   void initState() {
     super.initState();
     _calValues = calibrationValues;
+    ppmCO = workValues[5] + workValues[6] << 8;
+    ppmCH4 = workValues[7] + workValues[8] << 8;
     updateValues(_calValues);
     _subscribeToCalCharacteristic();
+    _subscribeToWorkCharacteristic();
   }
 
   @override
@@ -707,6 +713,22 @@ class CalibrationState extends State<CalibrationPage> {
     });
 
     myDevice.device.cancelWhenDisconnected(calSub);
+  }
+
+  void _subscribeToWorkCharacteristic() async {
+    if (!alreadySubWork) {
+      await myDevice.workUuid.setNotifyValue(true);
+      alreadySubWork = true;
+    }
+    final workSub =
+        myDevice.workUuid.onValueReceived.listen((List<int> status) {
+      setState(() {
+        ppmCO = status[5] + status[6] << 8;
+        ppmCH4 = status[7] + status[8] << 8;
+      });
+    });
+
+    myDevice.device.cancelWhenDisconnected(workSub);
   }
 
 //!Visual
@@ -981,7 +1003,7 @@ class CalibrationState extends State<CalibrationPage> {
                 TextSpan(
                   children: [
                     const TextSpan(
-                      text: 'Valor de la resistencia del sensor: ',
+                      text: 'Resistencia del sensor en GAS: ',
                       style: TextStyle(
                         fontSize: 16.0,
                         color: Colors.white,
@@ -1018,7 +1040,7 @@ class CalibrationState extends State<CalibrationPage> {
                 TextSpan(
                   children: [
                     const TextSpan(
-                      text: 'Valor resistencia relativa en CO: ',
+                      text: 'Resistencia de sensor en monoxido: ',
                       style: TextStyle(
                         fontSize: 16.0,
                         color: Colors.white,
@@ -1057,7 +1079,7 @@ class CalibrationState extends State<CalibrationPage> {
                     const TextSpan(
                       text: 'Temperatura del micro: ',
                       style: TextStyle(
-                        fontSize: 16.0,
+                        fontSize: 22.0,
                         color: Colors.white,
                       ),
                     ),
@@ -1080,6 +1102,42 @@ class CalibrationState extends State<CalibrationPage> {
                   ],
                 ),
               ),
+              const SizedBox(height: 20),
+              Text.rich(TextSpan(children: [
+                const TextSpan(
+                  text: 'PPM CO: ',
+                  style: TextStyle(
+                    fontSize: 22.0,
+                    color: Colors.white,
+                  ),
+                ),
+                TextSpan(
+                  text: '$ppmCO',
+                  style: const TextStyle(
+                    fontSize: 24.0,
+                    color: Color.fromARGB(255, 29, 163, 169),
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ])),
+              const SizedBox(height: 20),
+              Text.rich(TextSpan(children: [
+                const TextSpan(
+                  text: 'PPM CH4: ',
+                  style: TextStyle(
+                    fontSize: 22.0,
+                    color: Colors.white,
+                  ),
+                ),
+                TextSpan(
+                  text: '$ppmCH4',
+                  style: const TextStyle(
+                    fontSize: 24.0,
+                    color: Color.fromARGB(255, 29, 163, 169),
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ])),
               const SizedBox(height: 50),
             ],
           ),
@@ -2037,7 +2095,7 @@ class OTAState extends State<OTAPage> {
               ),
               const SizedBox(height: 20),
               SizedBox(
-                width: 300 ,
+                width: 300,
                 child: ElevatedButton(
                   onPressed: () {
                     otaPIC = true;
@@ -2088,198 +2146,175 @@ class OTAState extends State<OTAPage> {
   }
 }
 
-//QRPAGE //solo scanQR
+//DEBUG //ANOTHER PAGE
 
-class QRScanPage extends StatefulWidget {
-  const QRScanPage({super.key});
+class DebugPage extends StatefulWidget {
+  const DebugPage({super.key});
   @override
-  QRScanPageState createState() => QRScanPageState();
+  DebugState createState() => DebugState();
 }
 
-class QRScanPageState extends State<QRScanPage>
-    with SingleTickerProviderStateMixin {
-  final GlobalKey qrKey = GlobalKey(debugLabel: 'QR');
-  Barcode? result;
-  QRViewController? controller;
-  AnimationController? animationController;
-  bool flashOn = false;
-  late Animation<double> animation;
+class DebugState extends State<DebugPage> {
+  List<String> debug = [];
+  final ScrollController _scrollController = ScrollController();
 
   @override
   void initState() {
     super.initState();
+    updateDebugValues(debugValues);
+    _subscribeDebug();
+  }
 
-    animationController = AnimationController(
-      duration: const Duration(seconds: 2),
-      vsync: this,
-    );
+  void updateDebugValues(List<int> values) {
+    debug.clear();
+    print('Aqui esta esto: $values');
 
-    animation = Tween<double>(begin: 10, end: 350).animate(animationController!)
-      ..addListener(() {
-        setState(() {});
-      });
+    setState(() {
+      for (int i = 0; i < values.length; i += 2) {
+        int datas = values[i] + (values[i + 1] << 8);
+        debug.add(datas.toString());
+      }
+    });
+  }
 
-    animationController!.repeat(reverse: true);
+  void _subscribeDebug() async {
+    if (!alreadySubDebug) {
+      await myDevice.debugUuid.setNotifyValue(true);
+      alreadySubDebug = true;
+    }
+    print('Me turbosuscribi a regulacion');
+    final debugSub =
+        myDevice.debugUuid.onValueReceived.listen((List<int> status) {
+      updateDebugValues(status);
+    });
+
+    myDevice.device.cancelWhenDisconnected(debugSub);
+  }
+
+  String _textToShow(int num) {
+    switch (num + 1) {
+      case 1:
+        return 'Gasout: ';
+      case 2:
+        return 'Gasout estable CH4: ';
+      case 3:
+        return 'Gasout estable CO: ';
+      case 4:
+        return 'VCC: ';
+      case 5:
+        return 'VCC estable: ';
+      case 6:
+        return 'Temperatura: ';
+      case 7:
+        return 'Temperatura estable: ';
+      case 8:
+        return 'PWM Rising point: ';
+      case 9:
+        return 'PWM Falling point: ';
+      case 10:
+        return 'PWM: ';
+      case 11:
+        return 'PWM estable: ';
+      default:
+        return 'Error';
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: Stack(
-        children: [
-          QRView(
-            key: qrKey,
-            onQRViewCreated: _onQRViewCreated,
-          ),
-          // Arriba
-          Positioned(
-            top: 0,
-            left: 0,
-            right: 0,
-            height: 250,
-            child: Container(
-                color: Colors.black54,
-                child: const Center(
-                  child: Text('Escanea el QR',
-                      style:
-                          TextStyle(color: Color.fromARGB(255, 29, 163, 169))),
-                )),
-          ),
-          // Abajo
-          Positioned(
-            bottom: 0,
-            left: 0,
-            right: 0,
-            height: 250,
-            child: Container(
-              color: Colors.black54,
-            ),
-          ),
-          // Izquierda
-          Positioned(
-            top: 250,
-            bottom: 250,
-            left: 0,
-            width: 50,
-            child: Container(
-              color: Colors.black54,
-            ),
-          ),
-          // Derecha
-          Positioned(
-            top: 250,
-            bottom: 250,
-            right: 0,
-            width: 50,
-            child: Container(
-              color: Colors.black54,
-            ),
-          ),
-          // Área transparente con bordes redondeados
-          Positioned(
-            top: 250,
-            left: 50,
-            right: 50,
-            bottom: 250,
-            child: Stack(
-              children: [
-                Positioned(
-                  top: animation.value,
-                  left: 0,
-                  right: 0,
-                  child: Container(
-                    height: 4,
-                    color: const Color.fromARGB(255, 29, 163, 169),
-                  ),
+    return PopScope(
+        canPop: false,
+        onPopInvoked: (didPop) {
+          showDialog(
+            context: context,
+            barrierDismissible: false,
+            builder: (context) {
+              return AlertDialog(
+                content: Row(
+                  children: [
+                    const CircularProgressIndicator(),
+                    Container(
+                        margin: const EdgeInsets.only(left: 15),
+                        child: const Text("Desconectando...")),
+                  ],
                 ),
-                Positioned(
-                  top: 0,
-                  left: 0,
-                  right: 0,
-                  child: Container(
-                    height: 3,
-                    color: const Color.fromARGB(255, 1, 18, 28),
-                  ),
-                ),
-                Positioned(
-                  bottom: 0,
-                  left: 0,
-                  right: 0,
-                  child: Container(
-                    height: 3,
-                    color: const Color.fromARGB(255, 1, 18, 28),
-                  ),
-                ),
-                Positioned(
-                  top: 0,
-                  bottom: 0,
-                  left: 0,
-                  child: Container(
-                    width: 3,
-                    color: const Color.fromARGB(255, 1, 18, 28),
-                  ),
-                ),
-                Positioned(
-                  top: 0,
-                  bottom: 0,
-                  right: 0,
-                  child: Container(
-                    width: 3,
-                    color: const Color.fromARGB(255, 1, 18, 28),
-                  ),
-                ),
-              ],
-            ),
-          ),
-          // Botón de Flash
-          Positioned(
-            bottom: 20,
-            right: 20,
-            child: IconButton(
-              icon: Icon(
-                flashOn ? Icons.flash_on : Icons.flash_off,
-                color: Colors.white,
-              ),
-              onPressed: () {
-                controller?.toggleFlash();
-                setState(() {
-                  flashOn = !flashOn;
-                });
-              },
-            ),
-          ),
-        ],
-      ),
-    );
-  }
+              );
+            },
+          );
+          Future.delayed(const Duration(seconds: 2), () async {
+            print('aca estoy');
+            await myDevice.device.disconnect();
+            navigatorKey.currentState?.pop();
+            navigatorKey.currentState?.pushReplacementNamed('/regbank');
+          });
 
-  void _onQRViewCreated(QRViewController controller) {
-    this.controller = controller;
-    controller.scannedDataStream.listen((scanData) {
-      Future.delayed(const Duration(milliseconds: 800), () {
-        try {
-          if (navigatorKey.currentState != null &&
-              navigatorKey.currentState!.canPop()) {
-            navigatorKey.currentState!.pop(scanData.code);
-          }
-        } catch (e, stackTrace) {
-          print("Error: $e $stackTrace");
-          showToast('Error al leer QR');
-          // handleManualError(e, stackTrace);
-        }
-      });
-    });
-  }
-
-  @override
-  void dispose() {
-    controller?.dispose();
-    animationController?.dispose();
-    super.dispose();
+          return;
+        },
+        child: Center(
+          child: Scaffold(
+              backgroundColor: const Color.fromARGB(255, 1, 18, 28),
+              body: Column(
+                children: [
+                  const Text('Valores del PIC ADC',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 30)),
+                  const SizedBox(
+                    height: 20,
+                  ),
+                  Expanded(
+                    child: ListView.builder(
+                        controller: _scrollController,
+                        itemCount: debug.length,
+                        itemBuilder: (context, index) {
+                          return ListBody(children: [
+                            Row(
+                              children: [
+                                Text(_textToShow(index),
+                                    textAlign: TextAlign.center,
+                                    style: const TextStyle(
+                                        color: Colors.white,
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 20)),
+                                Text(debug[index],
+                                    textAlign: TextAlign.center,
+                                    style: const TextStyle(
+                                        color:
+                                            Color.fromARGB(255, 29, 163, 169),
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 20)),
+                              ],
+                            ),
+                            SliderTheme(
+                              data: SliderTheme.of(context).copyWith(
+                                  disabledActiveTrackColor:
+                                      const Color.fromARGB(255, 29, 163, 169),
+                                  disabledInactiveTrackColor:
+                                      const Color.fromARGB(255, 68, 89, 99),
+                                  trackHeight: 12,
+                                  thumbShape: SliderComponentShape.noThumb),
+                              child: Slider(
+                                value: double.parse(debug[index]),
+                                min: 0,
+                                max: 1023,
+                                onChanged: null,
+                                onChangeStart: null,
+                              ),
+                            ),
+                          ]);
+                        }),
+                  ),
+                ],
+              )),
+        ));
   }
 }
 
-//LOADING //ANODA PAGE
+//*------------------------------------------SECONDARY SCREENS------------------------------------------*\\
+
+//LOADING //ANOTHER PAGE
 
 class LoadingPage extends StatefulWidget {
   const LoadingPage({super.key});
@@ -2316,12 +2351,16 @@ class LoadState extends State<LoadingPage> {
       if (factoryMode) {
         calibrationValues = await myDevice.calibrationUuid.read();
         regulationValues = await myDevice.regulationUuid.read();
+        debugValues = await myDevice.debugUuid.read();
+        workValues = await myDevice.workUuid.read();
       }
       toolsValues = await myDevice.toolsUuid.read();
       print('Valores calibracion: $calibrationValues');
       print('Valores regulacion: $regulationValues');
       print('Valores keys: $keysValues');
       print('Valores tools: $toolsValues');
+      print('Valores debug: $debugValues');
+      print('Valores trabajo: $workValues');
 
       return Future.value(true);
     } catch (e, stackTrace) {
