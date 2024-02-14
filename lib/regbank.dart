@@ -1220,7 +1220,6 @@ class ScanTabState extends State<ScanTab> {
               showToast('Dispositivo desconectado');
               calibrationValues.clear();
               regulationValues.clear();
-              keysValues.clear();
               toolsValues.clear();
               nameOfWifi = '';
               connectionFlag = false;

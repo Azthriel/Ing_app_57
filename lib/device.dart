@@ -304,16 +304,18 @@ class CharPage extends StatefulWidget {
 
 class CharState extends State<CharPage> {
   String dataToshow = '';
-  var parts = utf8.decode(keysValues).split(':');
+  var parts = utf8.decode(infoValues).split(':');
   late String serialNumber;
   late String versionNumber;
+  late String hardNumber;
   TextEditingController textController = TextEditingController();
 
   @override
   void initState() {
     super.initState();
-    serialNumber = parts[0]; // Serial Number
-    versionNumber = parts[1]; // Version Number
+    serialNumber = parts[1]; // Serial Number
+    versionNumber = parts[2]; // Soft Version Number
+    hardNumber = parts[3]; // Hard Version Number
   }
 
   void sendDataToDevice() async {
@@ -418,7 +420,7 @@ class CharState extends State<CharPage> {
                 const SizedBox(height: 50),
                 const Text.rich(
                   TextSpan(
-                      text: 'Version del código del modulo IOT:',
+                      text: 'Version de software del modulo IOT:',
                       style: (TextStyle(
                           fontSize: 20.0,
                           color: Colors.white,
@@ -427,6 +429,23 @@ class CharState extends State<CharPage> {
                 Text.rich(
                   TextSpan(
                       text: versionNumber,
+                      style: (const TextStyle(
+                          fontSize: 20.0,
+                          color: Color.fromARGB(255, 29, 163, 169),
+                          fontWeight: FontWeight.bold))),
+                ),
+                const SizedBox(height: 15),
+                                const Text.rich(
+                  TextSpan(
+                      text: 'Version de hardware del modulo IOT:',
+                      style: (TextStyle(
+                          fontSize: 20.0,
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold))),
+                ),
+                Text.rich(
+                  TextSpan(
+                      text: hardNumber,
                       style: (const TextStyle(
                           fontSize: 20.0,
                           color: Color.fromARGB(255, 29, 163, 169),
@@ -1617,7 +1636,7 @@ class OTAState extends State<OTAPage> {
           (size >> 24) & 0xFF
         ];
 
-        await myDevice.keysUuid.write(sizeInBytes, withoutResponse: false);
+        await myDevice.infoUuid.write(sizeInBytes, withoutResponse: false);
         sizeWasSend = true;
 
         sendchunk();
@@ -1645,7 +1664,7 @@ class OTAState extends State<OTAPage> {
     for (int i = 0; i < value.length; i += chunk) {
       print('Mande chunk');
       List<int> subvalue = value.sublist(i, min(i + chunk, value.length));
-      await myDevice.keysUuid.write(subvalue, withoutResponse: false);
+      await myDevice.infoUuid.write(subvalue, withoutResponse: false);
     }
   }
 
@@ -2343,10 +2362,6 @@ class LoadState extends State<LoadingPage> {
   Future<bool> precharge() async {
     try {
       await myDevice.device.requestMtu(255);
-      keysValues = await myDevice.keysUuid.read();
-      String str = utf8.decode(keysValues);
-      var partes = str.split(':');
-      factoryMode = partes[1].contains('_F');
 
       if (factoryMode) {
         calibrationValues = await myDevice.calibrationUuid.read();
@@ -2357,7 +2372,6 @@ class LoadState extends State<LoadingPage> {
       toolsValues = await myDevice.toolsUuid.read();
       print('Valores calibracion: $calibrationValues');
       print('Valores regulacion: $regulationValues');
-      print('Valores keys: $keysValues');
       print('Valores tools: $toolsValues');
       print('Valores debug: $debugValues');
       print('Valores trabajo: $workValues');

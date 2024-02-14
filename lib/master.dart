@@ -38,10 +38,10 @@ bool atemp = false;
 late bool factoryMode;
 List<int> calibrationValues = [];
 List<int> regulationValues = [];
-List<int> keysValues = [];
 List<int> toolsValues = [];
 List<int> debugValues = [];
 List<int> workValues = [];
+List<int> infoValues = [];
 bool isWifiConnected = false;
 bool wifilogoConnected = false;
 String textState = '';
@@ -296,10 +296,10 @@ class MyDevice {
   late BluetoothCharacteristic calibrationUuid;
   late BluetoothCharacteristic regulationUuid;
   late BluetoothCharacteristic lightUuid;
-  late BluetoothCharacteristic keysUuid;
   late BluetoothCharacteristic otaUuid;
   late BluetoothCharacteristic debugUuid;
   late BluetoothCharacteristic workUuid;
+  late BluetoothCharacteristic infoUuid;
 
   Future<bool> setup(BluetoothDevice connectedDevice) async {
     try {
@@ -309,20 +309,26 @@ class MyDevice {
           await device.discoverServices(timeout: 30);
       print('Los servicios: $services');
 
+      BluetoothService infoService = services.firstWhere(
+          (s) => s.uuid == Guid('6a3253b4-48bc-4e97-bacd-325a1d142038'));
+      infoUuid = infoService.characteristics.firstWhere((c) =>
+          c.uuid ==
+          Guid(
+              'fc5c01f9-18de-4a75-848b-d99a198da9be')); //ProductType:SerialNumber:SoftVer:HardVer:Owner
+      toolsUuid = infoService.characteristics.firstWhere((c) =>
+          c.uuid ==
+          Guid(
+              '3565a918-f830-4fa1-b743-18d618fc5269')); //WifiStatus:WifiSSID/WifiError:BleStatus(users)
+
       BluetoothService espService = services.firstWhere(
           (s) => s.uuid == Guid('33e3a05a-c397-4bed-81b0-30deb11495c7'));
-
-      toolsUuid = espService.characteristics.firstWhere(
-          (c) => c.uuid == Guid('89925840-3d11-4676-bf9b-62961456b570'));
-      keysUuid = espService.characteristics.firstWhere(
-          (c) => c.uuid == Guid('db34bdb0-c04e-4c02-8401-078fb22ef46a'));
       otaUuid = espService.characteristics.firstWhere(
           (c) => c.uuid == Guid('6e364bda-5f52-4d58-979d-44693840d271'));
 
-      List<int> listita = await keysUuid.read();
-      String str = utf8.decode(listita);
+      infoValues = await infoUuid.read();
+      String str = utf8.decode(infoValues);
       var partes = str.split(':');
-      factoryMode = partes[1].contains('_F');
+      factoryMode = partes[2].contains('_F');
 
       BluetoothService service = services.firstWhere(
           (s) => s.uuid == Guid('dd249079-0ce8-4d11-8aa9-53de4040aec6'));
