@@ -1,9 +1,12 @@
-// ignore_for_file: avoid_print
 import 'dart:async';
-import 'dart:convert';
+import 'dart:io';
 import 'package:easy_refresh/easy_refresh.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
+import 'package:mqtt_client/mqtt_client.dart';
+import 'package:mqtt_client/mqtt_server_client.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:share/share.dart';
 import 'master.dart';
 
 class Regbank extends StatelessWidget {
@@ -22,7 +25,7 @@ class Regbank extends StatelessWidget {
         useMaterial3: true,
       ),
       home: DefaultTabController(
-        length: 5,
+        length: 3,
         child: Scaffold(
           appBar: AppBar(
             backgroundColor: const Color.fromARGB(255, 29, 163, 169),
@@ -34,1109 +37,23 @@ class Regbank extends StatelessWidget {
               indicatorColor: Color.fromARGB(255, 7, 135, 137),
               tabs: [
                 Tab(icon: Icon(Icons.bluetooth_searching)),
-                Tab(icon: Icon(Icons.app_registration)),
                 Tab(icon: Icon(Icons.assignment)),
-                Tab(icon: Icon(Icons.dew_point)),
                 Tab(
                   icon: Icon(Icons.update),
                 )
               ],
             ),
-            actions: <Widget>[
-              Row(
-                children: [
-                  IconButton(
-                      icon: const Icon(
-                        Icons.delete,
-                        size: 24.0,
-                        semanticLabel: 'Wipe icon',
-                      ),
-                      onPressed: () {
-                        showDialog(
-                          context: navigatorKey.currentContext!,
-                          builder: (BuildContext context) {
-                            return AlertDialog(
-                              title: const Center(
-                                  child: Text(
-                                'Borrar datos de la hoja de calculo',
-                                style: TextStyle(
-                                    color: Colors.black,
-                                    fontWeight: FontWeight.bold),
-                              )),
-                              content:
-                                  const Text('Esta acción no puede revertirse'),
-                              actions: [
-                                TextButton(
-                                    onPressed: () async {
-                                      String url =
-                                          'https://script.google.com/macros/s/AKfycbw_yagA9NNUKmbAoVLsbg9R9sR9ZJCbNRk-TUdQDyXL3pVOUdeo7lrKFjQBIgZ2KazB/exec';
-                                      final response = await dio.post(url);
-                                      if (response.statusCode == 200) {
-                                        print('Wipe completo');
-                                      } else {
-                                        print('Unu');
-                                      }
-                                      numbersToCheck.clear();
-                                      deviceDiagnosisResults.clear();
-                                    },
-                                    child: const Text('Borrar'))
-                              ],
-                            );
-                          },
-                        );
-                      }),
-                  IconButton(
-                    icon: const Icon(
-                      Icons.person,
-                      size: 24.0,
-                      semanticLabel: 'Nickname icon',
-                    ),
-                    onPressed: () {
-                      showDialog(
-                        context: navigatorKey.currentContext!,
-                        builder: (BuildContext context) {
-                          return AlertDialog(
-                              title: const Center(
-                                  child: Text(
-                                'Agrega un nombre de usuario:',
-                                style: TextStyle(
-                                    color: Colors.black,
-                                    fontWeight: FontWeight.bold),
-                              )),
-                              content: SingleChildScrollView(
-                                child: Column(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      SizedBox(
-                                          width: 400,
-                                          child: TextField(
-                                              decoration: InputDecoration(
-                                                  hintText: nickname),
-                                              controller: nicknameController,
-                                              onSubmitted: (value) {
-                                                nickname =
-                                                    nicknameController.text;
-                                                print(
-                                                    'El nickname actual: $nickname');
-                                                nicknameController.clear();
-                                                Navigator.pop(context);
-                                              }))
-                                    ]),
-                              ));
-                        },
-                      );
-                    },
-                  ),
-                ],
-              )
-            ],
           ),
           body: const TabBarView(
             children: [
               ScanTab(),
-              RegisterTab(),
-              DiagnosisTab(),
-              RegulationTab(),
+              RegbankTab(),
               UpdateTab(),
             ],
           ),
         ),
       ),
     );
-  }
-}
-
-//REGISTER TAB //Upload the devices into the sheet
-
-class RegisterTab extends StatefulWidget {
-  const RegisterTab({super.key});
-  @override
-  RegisterTabState createState() => RegisterTabState();
-}
-
-class RegisterTabState extends State<RegisterTab> {
-  int step = 0;
-  String header = '';
-  String initialvalue = '';
-  String finalvalue = '';
-  Map<String, bool> headersProcessed = {};
-  final TextEditingController controller = TextEditingController();
-  List<String> numbersTosend = [];
-  double numbersProgress = 0.0;
-  final FocusNode registerFocusNode = FocusNode();
-  bool isRegister = false;
-
-  List<String> generateSerialNumbers(
-      String header, int initialValue, int finalValue) {
-    print('Header: $header');
-    print('Initial: $initialvalue');
-    print('Final: $finalvalue');
-    List<String> serialNumbers = [];
-    for (int i = initialValue; i <= finalValue; i++) {
-      if (i < 10) {
-        serialNumbers.add("${header}0$i");
-      } else {
-        serialNumbers.add("$header$i");
-      }
-    }
-    print(serialNumbers);
-    return serialNumbers;
-  }
-
-  String textToShow(int data) {
-    switch (data) {
-      case 0:
-        return 'Agrega la cabecera del número de serie';
-      case 1:
-        return 'Desde...';
-      case 2:
-        return 'Hasta...';
-      default:
-        return "Error Desconocido";
-    }
-  }
-
-  Future<void> cancelReg() async {
-    setState(() {
-      step = 0;
-      headersProcessed.clear();
-      numbersTosend.clear();
-      numbersToCheck.clear();
-      deviceDiagnosisResults.clear();
-      header = '';
-      initialvalue = '';
-      finalvalue = '';
-    });
-  }
-
-  Future<void> _addregister() async {
-    print('mande alguito');
-
-    setState(() {
-      isRegister = true;
-    });
-    String serialNumbersJson = jsonEncode(numbersTosend);
-    const String url =
-        'https://script.google.com/macros/s/AKfycbxQeYSANepCxF_aB4-GzI9YNMrs25J_EwgYR1pxogqNEw5wzVjWAEQr1imBi98Zrn8c-A/exec';
-
-    final Uri uri = Uri.parse(url).replace(queryParameters: {
-      'serialNumbers': serialNumbersJson,
-      'nickname': nickname ?? 'Anónimo',
-    });
-
-    // final response = await http.get(uri);
-    final response = await dio.getUri(uri);
-    if (response.statusCode == 200) {
-      numbersToCheck.addAll(numbersTosend);
-      print('Si llego');
-      headersProcessed.clear();
-      numbersTosend.clear();
-      isRegister = false;
-      setState(() {});
-    } else {
-      print('Unu');
-    }
-  }
-
-  @override
-  void dispose() {
-    controller.dispose();
-    super.dispose();
-  }
-
-//!Visual
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-        backgroundColor: const Color.fromARGB(255, 1, 18, 28),
-        appBar: AppBar(
-          title: const Text('Registro', style: TextStyle(color: Colors.white)),
-          backgroundColor: Colors.transparent,
-          centerTitle: true,
-        ),
-        bottomNavigationBar: const BottomAppBar(
-            color: Colors.transparent,
-            shadowColor: Colors.transparent,
-            child: Center(
-              child: Text(
-                  'Tanto el dispositivo como los detectores\ndeben estar conectados a internet',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                      color: Colors.teal,
-                      fontSize: 12,
-                      backgroundColor: Colors.transparent)),
-            )),
-        body: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Text(
-              textToShow(step),
-              style: const TextStyle(color: Color.fromARGB(255, 29, 163, 169)),
-            ),
-            Center(
-                child: SizedBox(
-                    width: 300,
-                    child: TextField(
-                        style: const TextStyle(
-                            color: Color.fromARGB(255, 29, 163, 169)),
-                        focusNode: registerFocusNode,
-                        controller: controller,
-                        keyboardType: TextInputType.number,
-                        onSubmitted: (value) {
-                          if (step == 0) {
-                            header = value;
-                            headersProcessed[header] = false;
-                            step = step + 1;
-                            controller.clear();
-                            WidgetsBinding.instance.addPostFrameCallback((_) {
-                              registerFocusNode.requestFocus();
-                            });
-                          } else if (step == 1) {
-                            initialvalue = value;
-                            controller.clear();
-                            step = step + 1;
-                            WidgetsBinding.instance.addPostFrameCallback((_) {
-                              registerFocusNode.requestFocus();
-                            });
-                          } else if (step == 2) {
-                            finalvalue = value;
-                            numbersTosend.addAll(generateSerialNumbers(
-                                header,
-                                int.parse(initialvalue),
-                                int.parse(finalvalue)));
-                            headersProcessed[header] = true;
-                            controller.clear();
-                            step = 0;
-                          }
-                          print(step);
-                          setState(() {});
-                        }))),
-            const SizedBox(height: 10),
-            ElevatedButton(
-              style: ButtonStyle(
-                  backgroundColor: MaterialStateProperty.all<Color>(
-                      const Color.fromARGB(255, 29, 163, 169)),
-                  foregroundColor: MaterialStateProperty.all<Color>(
-                      const Color.fromARGB(255, 255, 255, 255))),
-              onPressed: isRegister
-                  ? null
-                  : () {
-                      _addregister();
-                      controller.clear();
-                      step = 0;
-                      setState(() {});
-                    },
-              child: const Text('REGISTRAR EQUIPOS'),
-            ),
-            const SizedBox(height: 10),
-            ElevatedButton(
-                style: ButtonStyle(
-                    backgroundColor: MaterialStateProperty.all<Color>(
-                        const Color.fromARGB(255, 29, 163, 169)),
-                    foregroundColor: MaterialStateProperty.all<Color>(
-                        const Color.fromARGB(255, 255, 255, 255))),
-                onPressed: () => cancelReg(),
-                child: const Text('CANCELAR')),
-            const SizedBox(height: 10),
-            ListView.builder(
-              shrinkWrap: true,
-              itemCount: headersProcessed.length,
-              itemBuilder: (context, index) {
-                String header = headersProcessed.keys.elementAt(index);
-                bool isCharged = headersProcessed[header]!;
-                return ListTile(
-                  titleTextStyle:
-                      const TextStyle(color: Color.fromARGB(255, 29, 163, 169)),
-                  title: Text(header),
-                  leadingAndTrailingTextStyle:
-                      const TextStyle(color: Color.fromARGB(255, 29, 163, 169)),
-                  trailing: isCharged ? const Text("--cargado") : null,
-                );
-              },
-            ),
-            const SizedBox(height: 10),
-            if (isRegister) ...{
-              const CircularProgressIndicator(
-                color: Color.fromARGB(255, 29, 163, 169),
-              ),
-            }
-          ],
-        ));
-  }
-}
-
-//DIAGNOSIS TAB //Ask for the state of the devices
-
-class DiagnosisTab extends StatefulWidget {
-  const DiagnosisTab({super.key});
-
-  @override
-  DiagnosisTabState createState() => DiagnosisTabState();
-}
-
-class DiagnosisTabState extends State<DiagnosisTab> {
-  double progressValue = 0.0;
-  List<String> version = [];
-  List<int> ppmch4 = [];
-  List<int> ppmco = [];
-  bool isDiagnosing = false;
-  Stopwatch? stopwatch;
-  Timer? timer;
-
-  // http.Client client = http.Client();
-
-  Future<String> getStatusFromSerialNumber(String sn) async {
-    String url = 'http://RB_IOT_$sn.local:8080/DIAGNOSIS_OK';
-    print('Vine aquis $url');
-    try {
-      // final response = await client.get(Uri.parse(url));
-      final response = await dio.get(url);
-
-      if (response.statusCode == 200) {
-        if (response.data.toString().contains('DIAGNOSIS_OK')) {
-          var texto = response.data.toString();
-          String buscar = '(';
-          int inicio = texto.indexOf(buscar);
-          if (inicio != -1) {
-            int fin = texto.indexOf(')', inicio);
-            if (fin != -1) {
-              version.add(texto.substring(inicio + 1, fin));
-            } else {
-              print('No se encontró el cierre de la versión en el texto.');
-            }
-          } else {
-            print('No se encontró Version en el texto.');
-          }
-          updateDiagnosisResult('Detector$sn', 'ok');
-          return 'OK';
-        } else {
-          updateDiagnosisResult('Detector$sn', 'error');
-          return 'WRONG_RESPONSE';
-        }
-      } else {
-        updateDiagnosisResult('Detector$sn', 'error');
-        return 'WRONG_STATUS_CODE';
-      }
-    } catch (e, s) {
-      print("Error: $e");
-      print("Stacktrace: $s");
-      if (e is TimeoutException) {
-        updateDiagnosisResult('Detector$sn', 'error');
-        return 'CONNECTION_TIMED_OUT';
-      }
-      updateDiagnosisResult('Detector$sn', 'error');
-      return 'CONNECTION_ERROR';
-    }
-  }
-
-  Future<String> diagnosisCH4(String sn) async {
-    String url = 'http://RB_IOT_$sn.Local:8080/DIAGNOSIS_CH4';
-    print('Vine aquis $url');
-    try {
-      final response = await dio.get(url);
-
-      if (response.statusCode == 200) {
-        if (response.data.toString().contains('DIAGNOSIS_CH4')) {
-          var texto = response.data.toString();
-          String buscar = '(';
-          int inicio = texto.indexOf(buscar);
-          if (inicio != -1) {
-            int fin = texto.indexOf(')', inicio);
-            if (fin != -1) {
-              var payload = texto.substring(inicio + 1, fin);
-              var parts = payload.split(':');
-              int fun = int.parse(parts[0]);
-              fun += int.parse(parts[1]) << 8;
-              ppmch4.add(fun);
-            } else {
-              print('No se encontró el cierre del ppmch4 en el texto.');
-            }
-          } else {
-            print('No se encontró ppmch4 en el texto.');
-          }
-          return 'OK';
-        } else {
-          return 'WRONG_RESPONSE';
-        }
-      } else {
-        return 'WRONG_STATUS_CODE';
-      }
-    } catch (e, s) {
-      print("Error: $e");
-      print("Stacktrace: $s");
-      if (e is TimeoutException) {
-        return 'CONNECTION_TIMED_OUT';
-      }
-      return 'CONNECTION_ERROR';
-    }
-  }
-
-  Future<String> diagnosisCO(String sn) async {
-    String url = 'http://RB_IOT_$sn.Local:8080/DIAGNOSIS_CO';
-    print('Vine aquis $url');
-    try {
-      final response = await dio.get(url);
-
-      if (response.statusCode == 200) {
-        if (response.data.toString().contains('DIAGNOSIS_CO')) {
-          var texto = response.data.toString();
-          String buscar = '(';
-          int inicio = texto.indexOf(buscar);
-          if (inicio != -1) {
-            int fin = texto.indexOf(')', inicio);
-            if (fin != -1) {
-              var payload = texto.substring(inicio + 1, fin);
-              var parts = payload.split(':');
-              int fun = int.parse(parts[0]);
-              fun += int.parse(parts[1]) << 8;
-              ppmco.add(fun);
-            } else {
-              print('No se encontró el cierre del ppmco en el texto.');
-            }
-          } else {
-            print('No se encontró ppmco en el texto.');
-          }
-          return 'OK';
-        } else {
-          return 'WRONG_RESPONSE';
-        }
-      } else {
-        return 'WRONG_STATUS_CODE';
-      }
-    } catch (e, s) {
-      print("Error: $e");
-      print("Stacktrace: $s");
-      if (e is TimeoutException) {
-        return 'CONNECTION_TIMED_OUT';
-      }
-      return 'CONNECTION_ERROR';
-    }
-  }
-
-  Future<void> updateGoogleSheet(int value) async {
-    late String dataJson;
-    late String tipe;
-    String statusJson = jsonEncode(statusOfDevices);
-    if (value == 1) {
-      dataJson = jsonEncode(version);
-      tipe = 'OK';
-    } else if (value == 2) {
-      dataJson = jsonEncode(ppmch4);
-      tipe = 'CH4';
-    } else {
-      dataJson = jsonEncode(ppmco);
-      tipe = 'CO';
-    }
-
-    const String url =
-        'https://script.google.com/macros/s/AKfycbxXVphwIa0CLRRXiq3aj54atXYWwFnQon1G7Na5TPpOyD0LfXJflDWSnBf1TYgoSJGPZw/exec';
-
-    final Uri uri = Uri.parse(url).replace(queryParameters: {
-      'status': statusJson,
-      'tipe': tipe,
-      'data': dataJson,
-      'nickname': nickname ?? 'Anónimo'
-    });
-
-    final response = await dio.getUri(uri);
-
-    if (response.statusCode == 200) {
-      print('Actualización exitosa');
-    } else {
-      print('Error al actualizar la hoja de cálculo');
-    }
-  }
-
-  void startDiagnosis() async {
-    stopwatch = Stopwatch()..start();
-    timer = Timer.periodic(const Duration(seconds: 1), (Timer t) {
-      setState(() {});
-    });
-
-    setState(() {
-      isDiagnosing = true;
-      print('Cambio el estado $isDiagnosing');
-    });
-
-    print('Numeros a checkar $numbersToCheck');
-    for (int i = 0; i < numbersToCheck.length; i++) {
-      if (!isDiagnosing) {
-        print('Rompo ciclo');
-        break;
-      }
-      bool good = false;
-      String status = '';
-      for (int j = 0; j < 10; j++) {
-        print('RETRY: $j');
-        status = await getStatusFromSerialNumber(numbersToCheck[i]);
-        if (status == 'OK') {
-          good = true;
-          break;
-        } else {
-          await Future.delayed(const Duration(seconds: 3));
-        }
-      }
-      if (good == true) {
-        good = false;
-      } else {
-        version.add('-');
-      }
-      statusOfDevices.add(status);
-
-      setState(() {
-        progressValue = (i + 1) / numbersToCheck.length;
-      });
-    }
-    print(statusOfDevices);
-    print(version);
-
-    if (isDiagnosing) {
-      await updateGoogleSheet(1);
-    }
-
-    stopwatch!.stop();
-    timer!.cancel();
-
-    setState(() {
-      progressValue = 0.0;
-      statusOfDevices.clear();
-      deviceDiagnosisResults.clear();
-      version.clear();
-      isDiagnosing = false;
-    });
-  }
-
-  void startDiagnosisCH4() async {
-    stopwatch = Stopwatch()..start();
-    timer = Timer.periodic(const Duration(seconds: 1), (Timer t) {
-      setState(() {});
-    });
-
-    setState(() {
-      isDiagnosing = true;
-      print('Cambio el estado $isDiagnosing');
-    });
-
-    print('Numeros a checkar $numbersToCheck');
-    for (int i = 0; i < numbersToCheck.length; i++) {
-      if (!isDiagnosing) {
-        print('Rompo ciclo');
-        break;
-      }
-      bool good = false;
-      String status = '';
-      for (int j = 0; j < 10; j++) {
-        print('RETRY: $j');
-        status = await diagnosisCH4(numbersToCheck[i]);
-        if (status == 'OK') {
-          good = true;
-          break;
-        } else {
-          await Future.delayed(const Duration(seconds: 1));
-        }
-      }
-      if (good == true) {
-        good = false;
-      } else {
-        ppmch4.add(0);
-      }
-      statusOfDevices.add(status);
-
-      setState(() {
-        progressValue = (i + 1) / numbersToCheck.length;
-      });
-    }
-    print(statusOfDevices);
-    print(ppmch4);
-
-    if (isDiagnosing) {
-      await updateGoogleSheet(2);
-    }
-
-    stopwatch!.stop();
-    timer!.cancel();
-
-    setState(() {
-      progressValue = 0.0;
-      statusOfDevices.clear();
-      deviceDiagnosisResults.clear();
-      ppmch4.clear();
-      isDiagnosing = false;
-    });
-  }
-
-  void startDiagnosisCO() async {
-    stopwatch = Stopwatch()..start();
-    timer = Timer.periodic(const Duration(seconds: 1), (Timer t) {
-      setState(() {});
-    });
-
-    setState(() {
-      isDiagnosing = true;
-      print('Cambio el estado $isDiagnosing');
-    });
-
-    print('Numeros a checkar $numbersToCheck');
-    for (int i = 0; i < numbersToCheck.length; i++) {
-      if (!isDiagnosing) {
-        print('Rompo ciclo');
-        break;
-      }
-      bool good = false;
-      String status = '';
-      for (int j = 0; j < 10; j++) {
-        print('RETRY: $j');
-        status = await diagnosisCO(numbersToCheck[i]);
-        if (status == 'OK') {
-          good = true;
-          break;
-        } else {
-          await Future.delayed(const Duration(seconds: 1));
-        }
-      }
-      if (good == true) {
-        good = false;
-      } else {
-        ppmco.add(0);
-      }
-      statusOfDevices.add(status);
-
-      setState(() {
-        progressValue = (i + 1) / numbersToCheck.length;
-      });
-    }
-    print(statusOfDevices);
-    print(ppmco);
-
-    if (isDiagnosing) {
-      await updateGoogleSheet(3);
-    }
-
-    stopwatch!.stop();
-    timer!.cancel();
-
-    setState(() {
-      progressValue = 0.0;
-      statusOfDevices.clear();
-      deviceDiagnosisResults.clear();
-      ppmco.clear();
-      isDiagnosing = false;
-    });
-  }
-
-  void cancelDiagnosis() {
-    setState(() {
-      isDiagnosing = false;
-      progressValue = 0.0;
-    });
-  }
-
-  String elapsedTime() {
-    final time = stopwatch!.elapsed;
-    return '${time.inMinutes}:${(time.inSeconds % 60).toString().padLeft(2, '0')}';
-  }
-
-  @override
-  void dispose() {
-    if (timer != null) {
-      if (timer!.isActive) {
-        timer!.cancel();
-      }
-    }
-    // client.close();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-        backgroundColor: const Color.fromARGB(255, 1, 18, 28),
-        appBar: AppBar(
-          title: const Center(child: Text('Diagnosis')),
-          backgroundColor: Colors.transparent,
-          foregroundColor: Colors.white,
-        ),
-        bottomNavigationBar: const BottomAppBar(
-            color: Colors.transparent,
-            shadowColor: Colors.transparent,
-            child: Center(
-              child: Text(
-                  'Tanto el dispositivo como los detectores\ndeben estar conectados a internet',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                      color: Colors.teal,
-                      fontSize: 12,
-                      backgroundColor: Colors.transparent)),
-            )),
-        body: Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Stack(
-                alignment: Alignment.center,
-                children: [
-                  Container(
-                    height: 40,
-                    width: 300,
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(20),
-                      color: const Color.fromARGB(255, 68, 89, 99),
-                    ),
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(20),
-                      child: LinearProgressIndicator(
-                        value: progressValue,
-                        backgroundColor: Colors.transparent,
-                        valueColor: const AlwaysStoppedAnimation<Color>(
-                            Color.fromARGB(255, 29, 163, 169)),
-                      ),
-                    ),
-                  ),
-                  Text(
-                    'Progreso del diagnostico: ${(progressValue * 100).toInt()}%',
-                    style: const TextStyle(
-                      color: Color.fromARGB(255, 255, 255, 255),
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 10),
-              ElevatedButton(
-                style: ButtonStyle(
-                    backgroundColor: MaterialStateProperty.all<Color>(
-                        const Color.fromARGB(255, 29, 163, 169)),
-                    foregroundColor: MaterialStateProperty.all<Color>(
-                        const Color.fromARGB(255, 255, 255, 255))),
-                onPressed: isDiagnosing ? null : startDiagnosis,
-                child: const Text('Empezar diagnosis'),
-              ),
-              const SizedBox(height: 10),
-              ElevatedButton(
-                style: ButtonStyle(
-                    backgroundColor: MaterialStateProperty.all<Color>(
-                        const Color.fromARGB(255, 29, 163, 169)),
-                    foregroundColor: MaterialStateProperty.all<Color>(
-                        const Color.fromARGB(255, 255, 255, 255))),
-                onPressed: isDiagnosing ? null : startDiagnosisCH4,
-                child: const Text('Empezar diagnosis en CH4'),
-              ),
-              const SizedBox(height: 10),
-              ElevatedButton(
-                style: ButtonStyle(
-                    backgroundColor: MaterialStateProperty.all<Color>(
-                        const Color.fromARGB(255, 29, 163, 169)),
-                    foregroundColor: MaterialStateProperty.all<Color>(
-                        const Color.fromARGB(255, 255, 255, 255))),
-                onPressed: isDiagnosing ? null : startDiagnosisCO,
-                child: const Text('Empezar diagnosis en CO'),
-              ),
-              const SizedBox(height: 10),
-              ElevatedButton(
-                style: ButtonStyle(
-                    backgroundColor: MaterialStateProperty.all<Color>(
-                        const Color.fromARGB(255, 29, 163, 169)),
-                    foregroundColor: MaterialStateProperty.all<Color>(
-                        const Color.fromARGB(255, 255, 255, 255))),
-                onPressed: isDiagnosing ? cancelDiagnosis : null,
-                child: const Text('Cancelar'),
-              ),
-              isDiagnosing
-                  ? Text(
-                      'Tiempo transcurrido: ${elapsedTime()}',
-                      style: const TextStyle(
-                          color: Color.fromARGB(255, 29, 163, 169)),
-                    )
-                  : Container(),
-            ],
-          ),
-        ));
-  }
-}
-
-//REGULATION TAB //Reg in the regbank
-
-class RegulationTab extends StatefulWidget {
-  const RegulationTab({super.key});
-
-  @override
-  RegulationTabState createState() => RegulationTabState();
-}
-
-class RegulationTabState extends State<RegulationTab> {
-  final TextEditingController tempController = TextEditingController();
-  final TextEditingController regPointController = TextEditingController();
-  String temp = '';
-  bool tempSubmitted = false;
-  double individualProgressValue = 0.0;
-  bool isRegulating = false;
-  Stopwatch? stopwatch;
-  Timer? timer;
-  String rPoint = '';
-  bool regSubmitted = false;
-  List<String> regulationValues = [];
-
-  Future<String> getRegulationValue(String sn) async {
-    String url = 'http://RB_IOT_$sn.local:8080/REGP[$rPoint]($temp)';
-    String payloadCompleto = '';
-    print('Me voy a $url');
-
-    try {
-      final response = await dio.get(url);
-
-      if (response.statusCode == 200) {
-        if (response.data.toString().contains('PAYLOAD')) {
-          var texto = response.data.toString();
-          String buscar = 'PAYLOAD(';
-          int inicio = texto.indexOf(buscar);
-          if (inicio != -1) {
-            int fin = texto.indexOf(')', inicio);
-            if (fin != -1) {
-              payloadCompleto = texto.substring(inicio + 1, fin);
-              print(payloadCompleto);
-            } else {
-              print('No se encontró el cierre del PAYLOAD en el texto.');
-            }
-          } else {
-            print('No se encontró PAYLOAD en el texto.');
-          }
-          return payloadCompleto;
-        } else {
-          return 'WRONG_RESPONSE';
-        }
-      } else {
-        return 'WRONG_STATUS_CODE';
-      }
-    } catch (e) {
-      print("Error: $e");
-      if (e is TimeoutException) {
-        return 'CONNECTION_TIMED_OUT';
-      }
-      return 'CONNECTION_ERROR';
-    }
-  }
-
-  void startRegulation() async {
-    stopwatch = Stopwatch()..start();
-    timer = Timer.periodic(const Duration(seconds: 1), (Timer t) {
-      setState(() {});
-    });
-
-    setState(() {
-      isRegulating = true;
-      print('Cambio el estado reg $isRegulating');
-    });
-    print('Numeros a checkar $numbersToCheck');
-    for (int i = 0; i <= numbersToCheck.length; i++) {
-      if (!isRegulating) {
-        print('Rompo ciclo');
-        break;
-      }
-      String status = '';
-      for (int j = 0; j < 3; j++) {
-        print('RETRY: $j');
-        status = await getRegulationValue(numbersToCheck[i]);
-        if (status.contains('PAYLOAD')) {
-          break;
-        }
-      }
-      regulationValues.add(status);
-
-      setState(() {
-        individualProgressValue = (i + 1) / numbersToCheck.length;
-      });
-    }
-    print(regulationValues);
-
-    if (isRegulating) {
-      await updateGoogleSheet();
-    }
-
-    setState(() {
-      individualProgressValue = 0.0;
-      regulationValues.clear();
-    });
-
-    stopwatch!.stop();
-    timer!.cancel();
-
-    setState(() {
-      individualProgressValue = 0.0;
-      regulationValues.clear();
-      numbersToCheck.clear();
-
-      isRegulating = false;
-    });
-  }
-
-  Future<void> updateGoogleSheet() async {
-    String regValJson = jsonEncode(regulationValues);
-    String rPointJson = jsonEncode(rPoint);
-
-    const String url =
-        'https://script.google.com/macros/s/AKfycbzqV0ZzWWWFKZB22PZagwEZko0ZqZB1JDC8MKq8TRn5CK4XK2XFKceSUJRZW5vnwPk6VA/exec';
-
-    final Uri uri = Uri.parse(url).replace(queryParameters: {
-      'regVal': regValJson,
-      'regPoint': rPointJson,
-      'nickname': nickname ?? 'Anónimo'
-    });
-
-    // final response = await http.get(uri);
-    final response = await dio.getUri(uri);
-
-    if (response.statusCode == 200) {
-      print('Actualización exitosa reg');
-    } else {
-      print('Error al actualizar la hoja de cálculo reg');
-    }
-  }
-
-  String elapsedTime() {
-    final time = stopwatch!.elapsed;
-    return '${time.inMinutes}:${(time.inSeconds % 60).toString().padLeft(2, '0')}';
-  }
-
-  @override
-  void dispose() {
-    if (timer != null) {
-      if (timer!.isActive) {
-        timer!.cancel();
-      }
-    }
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-        backgroundColor: const Color.fromARGB(255, 1, 18, 28),
-        appBar: AppBar(
-          title: const Center(child: Text('Regulación')),
-          backgroundColor: Colors.transparent,
-          foregroundColor: Colors.white,
-        ),
-        bottomNavigationBar: const BottomAppBar(
-            color: Colors.transparent,
-            shadowColor: Colors.transparent,
-            child: Center(
-              child: Text(
-                  'Tanto el dispositivo como los detectores\ndeben estar conectados a internet',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                      color: Colors.teal,
-                      fontSize: 12,
-                      backgroundColor: Colors.transparent)),
-            )),
-        body: Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const SizedBox(height: 10),
-              Stack(
-                alignment: Alignment.center,
-                children: [
-                  Container(
-                    height: 40,
-                    width: 300,
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(20),
-                      color: const Color.fromARGB(255, 68, 89, 99),
-                    ),
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(20),
-                      child: LinearProgressIndicator(
-                        value: individualProgressValue,
-                        backgroundColor: Colors.transparent,
-                        valueColor: const AlwaysStoppedAnimation<Color>(
-                            Color.fromARGB(255, 29, 163, 169)),
-                      ),
-                    ),
-                  ),
-                  Text(
-                    'Progreso de la regulación: ${(individualProgressValue * 100).toInt()}%',
-                    style: const TextStyle(
-                      color: Color.fromARGB(255, 255, 255, 255),
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 30),
-              SizedBox(
-                  width: 300,
-                  child: TextField(
-                    style: const TextStyle(
-                        color: Color.fromARGB(255, 255, 255, 255)),
-                    controller: tempController,
-                    keyboardType: TextInputType.number,
-                    decoration: InputDecoration(
-                        hintStyle: const TextStyle(
-                            color: Color.fromARGB(255, 255, 255, 255)),
-                        hintText: tempSubmitted ? temp : 'Definir temperatura'),
-                    onSubmitted: (value) {
-                      temp = tempController.text;
-                      tempController.clear();
-                      tempSubmitted = true;
-                      setState(() {});
-                    },
-                  )),
-              const SizedBox(height: 10),
-              SizedBox(
-                  width: 300,
-                  child: TextField(
-                    style: const TextStyle(
-                        color: Color.fromARGB(255, 255, 255, 255)),
-                    controller: regPointController,
-                    keyboardType: TextInputType.number,
-                    decoration: InputDecoration(
-                        hintStyle: const TextStyle(
-                            color: Color.fromARGB(255, 255, 255, 255)),
-                        hintText: regSubmitted
-                            ? rPoint
-                            : 'Definir punto de regulación'),
-                    onSubmitted: (value) {
-                      rPoint = regPointController.text;
-                      regPointController.clear();
-                      regSubmitted = true;
-                      setState(() {});
-                    },
-                  )),
-              const SizedBox(height: 10),
-              ElevatedButton(
-                  style: ButtonStyle(
-                      backgroundColor: MaterialStateProperty.all<Color>(
-                          const Color.fromARGB(255, 29, 163, 169)),
-                      foregroundColor: MaterialStateProperty.all<Color>(
-                          const Color.fromARGB(255, 255, 255, 255))),
-                  onPressed: () => startRegulation(),
-                  child: const Text('Empezar regulación')),
-              const SizedBox(height: 10),
-              ElevatedButton(
-                  style: ButtonStyle(
-                      backgroundColor: MaterialStateProperty.all<Color>(
-                          const Color.fromARGB(255, 29, 163, 169)),
-                      foregroundColor: MaterialStateProperty.all<Color>(
-                          const Color.fromARGB(255, 255, 255, 255))),
-                  onPressed: () {
-                    setState(() {
-                      isRegulating = false;
-                      rPoint = '';
-                      temp = '';
-                      tempController.clear();
-                      regPointController.clear();
-                      tempSubmitted = false;
-                      regSubmitted = false;
-                    });
-                  },
-                  child: const Text('Cancelar')),
-              const SizedBox(height: 10),
-              isRegulating
-                  ? Text('Tiempo transcurrido: ${elapsedTime()}')
-                  : Container(),
-            ],
-          ),
-        ));
   }
 }
 
@@ -1166,21 +83,15 @@ class ScanTabState extends State<ScanTab> {
     scan();
   }
 
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
   void scan() async {
     if (bluetoothOn) {
-      print('Entre a escanear');
+      printLog('Entre a escanear');
       try {
         await FlutterBluePlus.startScan(
             withKeywords: ['Detector'],
             timeout: const Duration(seconds: 30),
             androidUsesFineLocation: true,
-            continuousUpdates: true);
+            continuousUpdates: false);
         FlutterBluePlus.scanResults.listen((results) {
           for (ScanResult result in results) {
             if (!devices
@@ -1195,7 +106,7 @@ class ScanTabState extends State<ScanTab> {
           }
         });
       } catch (e, stackTrace) {
-        print('Error al escanear $e $stackTrace');
+        printLog('Error al escanear $e $stackTrace');
         showToast('Error al escanear, intentelo nuevamente');
         // handleManualError(e, stackTrace);
       }
@@ -1208,12 +119,12 @@ class ScanTabState extends State<ScanTab> {
       deviceName = device.platformName;
       myDeviceid = device.remoteId.toString();
 
-      print('Teoricamente estoy conectado');
+      printLog('Teoricamente estoy conectado');
 
       MyDevice myDevice = MyDevice();
 
       device.connectionState.listen((BluetoothConnectionState state) {
-        print('Estado de conexión: $state');
+        printLog('Estado de conexión: $state');
         switch (state) {
           case BluetoothConnectionState.disconnected:
             {
@@ -1228,7 +139,8 @@ class ScanTabState extends State<ScanTab> {
               alreadySubOta = false;
               alreadySubDebug = false;
               alreadySubWork = false;
-              print('Razon: ${myDevice.device.disconnectReason?.description}');
+              printLog(
+                  'Razon: ${myDevice.device.disconnectReason?.description}');
               navigatorKey.currentState?.pushReplacementNamed('/regbank');
               break;
             }
@@ -1238,18 +150,18 @@ class ScanTabState extends State<ScanTab> {
                 connectionFlag = true;
                 FlutterBluePlus.stopScan();
                 myDevice.setup(device).then((valor) {
-                  print('RETORNASHE $valor');
+                  printLog('RETORNASHE $valor');
                   if (valor) {
                     navigatorKey.currentState?.pushReplacementNamed('/loading');
                   } else {
                     connectionFlag = false;
-                    print('Fallo en el setup');
+                    printLog('Fallo en el setup');
                     showToast('Error en el dispositivo, intente nuevamente');
                     myDevice.device.disconnect();
                   }
                 });
               } else {
-                print('Las chistosadas se apoderan del mundo');
+                printLog('Las chistosadas se apoderan del mundo');
               }
               break;
             }
@@ -1259,14 +171,20 @@ class ScanTabState extends State<ScanTab> {
       });
     } catch (e, stackTrace) {
       if (e is FlutterBluePlusException && e.code == 133) {
-        print('Error específico de Android con código 133: $e');
+        printLog('Error específico de Android con código 133: $e');
         showToast('Error de conexión, intentelo nuevamente');
       } else {
-        print('Error al conectar: $e $stackTrace');
+        printLog('Error al conectar: $e $stackTrace');
         showToast('Error al conectar, intentelo nuevamente');
         // handleManualError(e, stackTrace);
       }
     }
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
   }
 
 //! Visual
@@ -1356,6 +274,565 @@ class ScanTabState extends State<ScanTab> {
   }
 }
 
+//REGBANK TAB //Regbank associates
+
+class RegbankTab extends StatefulWidget {
+  const RegbankTab({super.key});
+
+  @override
+  RegbankTabState createState() => RegbankTabState();
+}
+
+class RegbankTabState extends State<RegbankTab> {
+  List<String> numbers = [];
+  int step = 0;
+  String header = '';
+  String initialvalue = '';
+  String finalvalue = '';
+  final FocusNode registerFocusNode = FocusNode();
+  final TextEditingController numbersController = TextEditingController();
+  bool hearing = false;
+  bool numbersAdded = false;
+  Stopwatch? stopwatch;
+  Timer? timer;
+  double _rp = 1.0;
+
+  //// ---------------------------------------------------------------------------------- ////
+
+  List<Map<String, List<int>>> mapasDatos = [];
+  Map<String, List<int>> streamData = {};
+  Map<String, List<int>> diagnosis = {};
+  Map<String, List<int>> regDone = {};
+  Map<String, List<int>> espUpdate = {};
+  Map<String, List<int>> picUpdate = {};
+  Map<String, List<int>> regPoint1 = {};
+  Map<String, List<int>> regPoint2 = {};
+  Map<String, List<int>> regPoint3 = {};
+  Map<String, List<int>> regPoint4 = {};
+  Map<String, List<int>> regPoint5 = {};
+  Map<String, List<int>> regPoint6 = {};
+  Map<String, List<int>> regPoint7 = {};
+  Map<String, List<int>> regPoint8 = {};
+  Map<String, List<int>> regPoint9 = {};
+  Map<String, List<int>> regPoint10 = {};
+
+  //// ---------------------------------------------------------------------------------- ////
+
+  @override
+  void initState() {
+    super.initState();
+    setupMqtt5773();
+  }
+
+  //!TEST
+
+  String textData(int i) {
+    switch (i) {
+      case 0:
+        return 'Stream Data';
+      case 1:
+        return 'Diagnosis';
+      case 2:
+        return 'Regulation Done';
+      case 3:
+        return 'Esp Update';
+      case 4:
+        return 'Pic Update';
+      case 5:
+        return 'Regulation Point 1';
+      case 6:
+        return 'Regulation Point 2';
+      case 7:
+        return 'Regulation Point 3';
+      case 8:
+        return 'Regulation Point 4';
+      case 9:
+        return 'Regulation Point 5';
+      case 10:
+        return 'Regulation Point 6';
+      case 11:
+        return 'Regulation Point 7';
+      case 12:
+        return 'Regulation Point 8';
+      case 13:
+        return 'Regulation Point 9';
+      case 14:
+        return 'Regulation Point 10';
+      default:
+        return '';
+    }
+  }
+
+  Future<void> exportDataAndShare(List<Map<String, List<int>>> lista) async {
+    final fileName = 'Data_${DateTime.now().toIso8601String()}.txt';
+    final directory = await getExternalStorageDirectory();
+    if (directory != null) {
+      final file = File('${directory.path}/$fileName');
+      final buffer = StringBuffer();
+      for (int i = 0; i < lista.length; i++) {
+        buffer.writeln('----------${textData(i)}----------');
+        buffer.writeln(
+            "N.Serie /-/ TimeStamp /-/ PPMCH4 /-/ PPMCO /-/ RSCH4 /-/ RSCO /-/ AD Gasout Estable /-/ AD Gasout Estable CO /-/ Temperatura /-/ AD Temp Estable /-/ VCC /-/ AD VCC Estable /-/ AD PWM Estable");
+        lista[i].forEach((key, value) {
+          var parts = key.split('/-/');
+          int ppmch4 = value[0] + (value[1] << 8);
+          int ppmco = value[2] + (value[3] << 8);
+          int rsch4 = value[4] + (value[5] << 8);
+          int rsco = value[6] + (value[7] << 8);
+          int adgsEs = value[8] + (value[9] << 8);
+          int adgsEsCO = value[10] + (value[11] << 8);
+          int temp = value[12];
+          int adTempEs = value[13] + (value[14] << 8);
+          int vcc = value[15] + (value[16] << 8);
+          int advccEst = value[17] + (value[18] << 8);
+          int adpwmEst = value[19] + (value[20] << 8);
+          buffer.writeln(
+              "${parts[0]} /-/ ${parts[1]} /-/ $ppmch4 /-/ $ppmco /-/ $rsch4 /-/ $rsco /-/ $adgsEs /-/ $adgsEsCO /-/ $temp /-/ $adTempEs /-/ $vcc /-/ $advccEst /-/ $adpwmEst ");
+        });
+      }
+      await file.writeAsString(buffer.toString());
+      shareFile(file.path);
+    } else {
+      printLog('Failed to get external storage directory');
+    }
+  }
+
+  void shareFile(String filePath) {
+    Share.shareFiles([filePath]);
+  }
+
+  //!TEST
+
+  void startTimer() {
+    stopwatch = Stopwatch()..start();
+    timer = Timer.periodic(const Duration(seconds: 1), (Timer t) {
+      setState(() {});
+    });
+  }
+
+  String elapsedTime() {
+    final time = stopwatch!.elapsed;
+    return '${time.inMinutes}:${(time.inSeconds % 60).toString().padLeft(2, '0')}';
+  }
+
+  void setupMqtt5773() async {
+    try {
+      printLog('Haciendo setup');
+      String deviceId = 'intelligentgas_IOT/${generateRandomNumbers(32)}';
+      String hostname = 'Cristian.local';
+
+      mqttClient5773 = MqttServerClient.withPort(hostname, deviceId, 1883);
+
+      mqttClient5773!.logging(on: true);
+      mqttClient5773!.onDisconnected = mqttonDisconnected;
+
+      // Configuración de las credenciales
+      mqttClient5773!.setProtocolV311();
+      mqttClient5773!.keepAlivePeriod = 3;
+      await mqttClient5773!.connect();
+      printLog('Usuario conectado a mqtt');
+      setState(() {});
+    } catch (e, s) {
+      printLog('Error setup mqtt $e $s');
+    }
+  }
+
+  void mqttonDisconnected() {
+    printLog('Desconectado de mqtt');
+    setupMqtt5773();
+  }
+
+  void sendMessagemqtt(String topic, String message) {
+    final MqttClientPayloadBuilder builder = MqttClientPayloadBuilder();
+    builder.addString(message);
+
+    mqttClient5773!
+        .publishMessage(topic, MqttQos.exactlyOnce, builder.payload!);
+  }
+
+  void subToTopicMQTT(String topic) {
+    mqttClient5773!.subscribe(topic, MqttQos.atLeastOnce);
+  }
+
+  void unSubToTopicMQTT(String topic) {
+    mqttClient5773!.unsubscribe(topic);
+  }
+
+  void listenToTopics() {
+    mqttClient5773!.updates?.listen((List<MqttReceivedMessage<MqttMessage>> c) {
+      final MqttPublishMessage recMess = c[0].payload as MqttPublishMessage;
+      final String topic = c[0].topic;
+      var serialNumerito = topic.split('/');
+      final List<int> message = recMess.payload.message;
+
+      switch (message[0]) {
+        case 0xF5: //Stream data
+          streamData.addAll(
+              {'${serialNumerito[1]}/-/${DateTime.now()}': message.sublist(1)});
+          // printLog(streamData);
+          break;
+        case 0xA1: //Diagnosis
+          diagnosis.addAll(
+              {'${serialNumerito[1]}/-/${DateTime.now()}': message.sublist(1)});
+          break;
+        case 0xA2: //Reg Done
+          regDone.addAll(
+              {'${serialNumerito[1]}/-/${DateTime.now()}': message.sublist(1)});
+          break;
+        case 0XA3: //Esp Update
+          espUpdate.addAll(
+              {'${serialNumerito[1]}/-/${DateTime.now()}': message.sublist(1)});
+          break;
+        case 0xA4: //Pic Update
+          picUpdate.addAll(
+              {'${serialNumerito[1]}/-/${DateTime.now()}': message.sublist(1)});
+          break;
+        case 0xB0: //RegPoint 1
+          regPoint1.addAll(
+              {'${serialNumerito[1]}/-/${DateTime.now()}': message.sublist(1)});
+          break;
+        case 0xB1: //RegPoint 2
+          regPoint2.addAll(
+              {'${serialNumerito[1]}/-/${DateTime.now()}': message.sublist(1)});
+          break;
+        case 0xB2: //RegPoint 3
+          regPoint3.addAll(
+              {'${serialNumerito[1]}/-/${DateTime.now()}': message.sublist(1)});
+          break;
+        case 0xB3: //RegPoint 4
+          regPoint4.addAll(
+              {'${serialNumerito[1]}/-/${DateTime.now()}': message.sublist(1)});
+          break;
+        case 0xB4: //RegPoint 5
+          regPoint5.addAll(
+              {'${serialNumerito[1]}/-/${DateTime.now()}': message.sublist(1)});
+          break;
+        case 0xB5: //RegPoint 6
+          regPoint6.addAll(
+              {'${serialNumerito[1]}/-/${DateTime.now()}': message.sublist(1)});
+          break;
+        case 0xB6: //RegPoint 7
+          regPoint7.addAll(
+              {'${serialNumerito[1]}/-/${DateTime.now()}': message.sublist(1)});
+          break;
+        case 0xB7: //RegPoint 8
+          regPoint8.addAll(
+              {'${serialNumerito[1]}/-/${DateTime.now()}': message.sublist(1)});
+          break;
+        case 0xB8: //RegPoint 9
+          regPoint9.addAll(
+              {'${serialNumerito[1]}/-/${DateTime.now()}': message.sublist(1)});
+          break;
+        case 0xB9: //RegPoint 10
+          regPoint10.addAll(
+              {'${serialNumerito[1]}/-/${DateTime.now()}': message.sublist(1)});
+          break;
+      }
+
+      printLog('Received message: ${message.toString()} from topic: $topic');
+    });
+  }
+
+  List<String> generateSerialNumbers(
+      String header, int initialValue, int finalValue) {
+    printLog('Header: $header');
+    printLog('Initial: $initialValue');
+    printLog('Final: $finalValue');
+    List<String> serialNumbers = [];
+    for (int i = initialValue; i <= finalValue; i++) {
+      if (i < 10) {
+        serialNumbers.add("${header}0$i");
+      } else {
+        serialNumbers.add("$header$i");
+      }
+    }
+    printLog('$serialNumbers');
+    numbersAdded = true;
+    return serialNumbers;
+  }
+
+  String textToShow(int data) {
+    switch (data) {
+      case 0:
+        return 'Agrega la cabecera del número de serie';
+      case 1:
+        return 'Desde...';
+      case 2:
+        return 'Hasta...';
+      default:
+        return "Error Desconocido";
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: const Color.fromARGB(255, 1, 18, 28),
+      body: SingleChildScrollView(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const SizedBox(
+              height: 50,
+            ),
+            if (!hearing) ...[
+              Text(
+                textToShow(step),
+                textAlign: TextAlign.center,
+                style:
+                    const TextStyle(color: Color.fromARGB(255, 29, 163, 169)),
+              ),
+              Center(
+                  child: SizedBox(
+                      width: 300,
+                      child: TextField(
+                          textAlign: TextAlign.center,
+                          style: const TextStyle(
+                              color: Color.fromARGB(255, 255, 255, 255)),
+                          decoration: InputDecoration(
+                              suffixIcon: IconButton(
+                            onPressed: () {
+                              showDialog(
+                                context: navigatorKey.currentContext!,
+                                builder: (BuildContext context) {
+                                  return AlertDialog(
+                                    title: const Center(
+                                        child: Text(
+                                      'Borrar lista de números',
+                                      style: TextStyle(
+                                          color: Colors.black,
+                                          fontWeight: FontWeight.bold),
+                                    )),
+                                    content: const Text(
+                                        'Esta acción no puede revertirse'),
+                                    actions: [
+                                      TextButton(
+                                          onPressed: () {
+                                            numbers.clear();
+                                            navigatorKey.currentState!.pop();
+                                          },
+                                          child: const Text('Borrar'))
+                                    ],
+                                  );
+                                },
+                              );
+                            },
+                            icon: const Icon(Icons.delete_forever),
+                          )),
+                          focusNode: registerFocusNode,
+                          controller: numbersController,
+                          keyboardType: TextInputType.number,
+                          onSubmitted: (value) {
+                            if (step == 0) {
+                              header = value;
+                              step = step + 1;
+                              numbersController.clear();
+                              WidgetsBinding.instance.addPostFrameCallback((_) {
+                                registerFocusNode.requestFocus();
+                              });
+                            } else if (step == 1) {
+                              initialvalue = value;
+                              numbersController.clear();
+                              step = step + 1;
+                              WidgetsBinding.instance.addPostFrameCallback((_) {
+                                registerFocusNode.requestFocus();
+                              });
+                            } else if (step == 2) {
+                              finalvalue = value;
+                              numbers.addAll(generateSerialNumbers(
+                                  header,
+                                  int.parse(initialvalue),
+                                  int.parse(finalvalue)));
+                              printLog('Lista: $numbers');
+                              numbersController.clear();
+                              step = 0;
+                            }
+                            setState(() {});
+                          }))),
+              const SizedBox(
+                height: 30,
+              ),
+            ],
+            numbersAdded &&
+                    mqttClient5773!.connectionStatus!.state ==
+                        MqttConnectionState.connected
+                ? ElevatedButton(
+                    style: ButtonStyle(
+                        backgroundColor: MaterialStateProperty.all<Color>(
+                            const Color.fromARGB(255, 29, 163, 169)),
+                        foregroundColor: MaterialStateProperty.all<Color>(
+                            const Color.fromARGB(255, 255, 255, 255))),
+                    onPressed: () {
+                      if (!hearing) {
+                        try {
+                          for (int i = 0; i < numbers.length; i++) {
+                            String topic = '015773_IOT/${numbers[i]}';
+                            subToTopicMQTT(topic);
+                          }
+                        } catch (e, s) {
+                          printLog('Error al sub $e $s');
+                        }
+                        listenToTopics();
+                        startTimer();
+                        hearing = true;
+                      } else {
+                        try {
+                          for (int i = 0; i < numbers.length; i++) {
+                            String topic = '015773_IOT/${numbers[i]}';
+                            unSubToTopicMQTT(topic);
+                          }
+                        } catch (e, s) {
+                          printLog('Error al unsub $e $s');
+                        }
+                        hearing = false;
+                        stopwatch!.stop();
+                        timer!.cancel();
+
+                        //Crear Sheet aca
+                        mapasDatos.addAll([
+                          streamData,
+                          diagnosis,
+                          regDone,
+                          espUpdate,
+                          picUpdate,
+                          regPoint1,
+                          regPoint2,
+                          regPoint3,
+                          regPoint4,
+                          regPoint5,
+                          regPoint6,
+                          regPoint7,
+                          regPoint8,
+                          regPoint9,
+                          regPoint10
+                        ]);
+                        exportDataAndShare(mapasDatos);
+                        setState(() {});
+                      }
+                    },
+                    child: hearing
+                        ? const Text(
+                            'Cancelar la escucha',
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                                color: Color.fromARGB(255, 255, 255, 255)),
+                          )
+                        : const Text(
+                            'Iniciar la escucha',
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                                color: Color.fromARGB(255, 255, 255, 255)),
+                          ),
+                  )
+                : Container(),
+            if (hearing) ...[
+              const SizedBox(
+                height: 30,
+              ),
+              ElevatedButton(
+                style: ButtonStyle(
+                    backgroundColor: MaterialStateProperty.all<Color>(
+                        const Color.fromARGB(255, 29, 163, 169)),
+                    foregroundColor: MaterialStateProperty.all<Color>(
+                        const Color.fromARGB(255, 255, 255, 255))),
+                onPressed: () {
+                  sendMessagemqtt('015773_RB', 'Mensaje de prueba');
+                },
+                child: const Text('Hacer Diagnosis OK'),
+              ),
+              const SizedBox(
+                height: 20,
+              ),
+              ElevatedButton(
+                style: ButtonStyle(
+                    backgroundColor: MaterialStateProperty.all<Color>(
+                        const Color.fromARGB(255, 29, 163, 169)),
+                    foregroundColor: MaterialStateProperty.all<Color>(
+                        const Color.fromARGB(255, 255, 255, 255))),
+                onPressed: () {},
+                child: const Text('Hacer Diagnosis CO'),
+              ),
+              const SizedBox(
+                height: 20,
+              ),
+              ElevatedButton(
+                style: ButtonStyle(
+                    backgroundColor: MaterialStateProperty.all<Color>(
+                        const Color.fromARGB(255, 29, 163, 169)),
+                    foregroundColor: MaterialStateProperty.all<Color>(
+                        const Color.fromARGB(255, 255, 255, 255))),
+                onPressed: () {},
+                child: const Text('Hacer Diagnosis CH4'),
+              ),
+              const SizedBox(
+                height: 20,
+              ),
+              Text(
+                'RP ${_rp.round()}',
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                    color: Color.fromARGB(255, 29, 163, 169), fontSize: 16),
+              ),
+              const SizedBox(
+                height: 5,
+              ),
+              SliderTheme(
+                data: SliderTheme.of(context).copyWith(
+                    disabledActiveTrackColor:
+                        const Color.fromARGB(255, 29, 163, 169),
+                    disabledInactiveTrackColor:
+                        const Color.fromARGB(255, 68, 89, 99),
+                    trackHeight: 20,
+                    thumbShape: SliderComponentShape.noThumb),
+                child: Slider(
+                  value: _rp,
+                  divisions: 11,
+                  min: 0,
+                  max: 11,
+                  onChanged: (value) {
+                    if (0 < value && value < 11) {
+                      setState(() {
+                        _rp = value;
+                      });
+                    }
+                  },
+                ),
+              ),
+              const SizedBox(
+                height: 10,
+              ),
+              ElevatedButton(
+                style: ButtonStyle(
+                    backgroundColor: MaterialStateProperty.all<Color>(
+                        const Color.fromARGB(255, 29, 163, 169)),
+                    foregroundColor: MaterialStateProperty.all<Color>(
+                        const Color.fromARGB(255, 255, 255, 255))),
+                onPressed: () {},
+                child: const Text('Enviar RegPoint'),
+              ),
+              const SizedBox(
+                height: 20,
+              ),
+              const CircularProgressIndicator(
+                color: Color.fromARGB(255, 255, 255, 255),
+              ),
+              const SizedBox(
+                height: 10,
+              ),
+              Text(
+                'Tiempo transcurrido: ${elapsedTime()}',
+                textAlign: TextAlign.center,
+                style:
+                    const TextStyle(color: Color.fromARGB(255, 255, 255, 255)),
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 //UPGRADE TAB //Masive updates tab
 
 class UpdateTab extends StatefulWidget {
@@ -1411,7 +888,7 @@ class UpdateTabState extends State<UpdateTab> {
   Future<String> sendUpdatePic(String sn) async {
     String url =
         'http://RB_IOT_$sn:8080/PIC_UPDATE(https://github.com/CrisDores/57_IOT_PUBLIC/raw/main/57_ota_factory_fw/firmware.hex)';
-    print('Vine aquis $url');
+    printLog('Vine aquis $url');
     try {
       final response = await dio.get(url);
 
@@ -1425,8 +902,8 @@ class UpdateTabState extends State<UpdateTab> {
         return 'WRONG_STATUS_CODE';
       }
     } catch (e, s) {
-      print("Error: $e");
-      print("Stacktrace: $s");
+      printLog("Error: $e");
+      printLog("Stacktrace: $s");
       if (e is TimeoutException) {
         return 'CONNECTION_TIMED_OUT';
       }
@@ -1477,7 +954,7 @@ class UpdateTabState extends State<UpdateTab> {
     String url =
         'http://RB_IOT_$sn:8080/ESP_UPDATE(https://github.com/CrisDores/57_IOT_PUBLIC/raw/main/57_ota_factory_fw/firmware.bin)';
 
-    print('Vine aquis $url');
+    printLog('Vine aquis $url');
     try {
       final response = await dio.get(url);
 
@@ -1491,8 +968,8 @@ class UpdateTabState extends State<UpdateTab> {
         return 'WRONG_STATUS_CODE';
       }
     } catch (e, s) {
-      print("Error: $e");
-      print("Stacktrace: $s");
+      printLog("Error: $e");
+      printLog("Stacktrace: $s");
       if (e is TimeoutException) {
         return 'CONNECTION_TIMED_OUT';
       }

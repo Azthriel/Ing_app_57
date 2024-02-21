@@ -1,10 +1,10 @@
-// ignore_for_file: avoid_print
 import 'dart:convert';
+import 'dart:math';
 import 'package:dio/dio.dart';
+import 'package:mqtt_client/mqtt_server_client.dart';
 import 'package:qr_code_scanner/qr_code_scanner.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
-import 'dart:io' show File;
 import 'dart:async';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:path_provider/path_provider.dart';
@@ -53,6 +53,8 @@ bool connectionFlag = false;
 bool checkbleFlag = false;
 bool bluetoothOn = false;
 double sliderValue = 0.0;
+MqttServerClient? mqttClient5773;
+
 
 MaterialColor statusColor = Colors.grey;
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
@@ -176,8 +178,13 @@ String getWifiErrorSintax(int errorCode) {
   }
 }
 
+void printLog(var text) {
+  // ignore: avoid_print
+  print('PrintData: $text');
+}
+
 void showToast(String message) {
-  print('Toast: $message');
+  printLog('Toast: $message');
   Fluttertoast.showToast(
       msg: message,
       toastLength: Toast.LENGTH_SHORT,
@@ -191,13 +198,13 @@ void showToast(String message) {
 Future<void> sendWifitoBle() async {
   MyDevice myDevice = MyDevice();
   String value = '$wifiName#$wifiPassword';
-  String dataToSend = '57_IOT[2]($value)';
-  print(dataToSend);
+  String dataToSend = '015773_IOT[1]($value)';
+  printLog(dataToSend);
   try {
     await myDevice.toolsUuid.write(dataToSend.codeUnits);
-    print('Se mando el wifi ANASHE');
+    printLog('Se mando el wifi ANASHE');
   } catch (e) {
-    print('Error al conectarse a Wifi $e');
+    printLog('Error al conectarse a Wifi $e');
   }
   atemp = true;
   wifiName = '';
@@ -217,12 +224,12 @@ Future<void> openQRScanner(BuildContext context) async {
       }
     });
   } catch (e) {
-    print("Error during navigation: $e");
+    printLog("Error during navigation: $e");
   }
 }
 
 Map<String, String> parseWifiQR(String qrContent) {
-  print(qrContent);
+  printLog(qrContent);
   final ssidMatch = RegExp(r'S:([^;]+)').firstMatch(qrContent);
   final passwordMatch = RegExp(r'P:([^;]+)').firstMatch(qrContent);
 
@@ -258,18 +265,18 @@ $stackTrace
     await file.writeAsString(errorReport);
     sendReportOnWhatsApp(file.path);
   } else {
-    print('Failed to get external storage directory');
+    printLog('Failed to get external storage directory');
   }
 }
 
 void updateDiagnosisResult(String key, String result) {
-  print('Actualicé la verga esta');
+  printLog('Actualicé la verga esta');
   deviceDiagnosisResults.addAll({key: result});
-  print(deviceDiagnosisResults);
+  printLog('$deviceDiagnosisResults');
 }
 
 IconData getDiagnosisIcon(String diagnosisResult) {
-  print(diagnosisResult);
+  printLog(diagnosisResult);
   switch (diagnosisResult) {
     case 'ok':
       return Icons.check; // Ícono de tilde verde
@@ -279,6 +286,18 @@ IconData getDiagnosisIcon(String diagnosisResult) {
       return Icons.help_outline; // Ícono de signo de pregunta
   }
 }
+
+String generateRandomNumbers(int length) {
+  Random random = Random();
+  String result = '';
+
+  for (int i = 0; i < length; i++) {
+    result += random.nextInt(10).toString();
+  }
+
+  return result;
+}
+
 
 // CLASES //
 
@@ -307,7 +326,7 @@ class MyDevice {
 
       List<BluetoothService> services =
           await device.discoverServices(timeout: 30);
-      print('Los servicios: $services');
+      printLog('Los servicios: $services');
 
       BluetoothService infoService = services.firstWhere(
           (s) => s.uuid == Guid('6a3253b4-48bc-4e97-bacd-325a1d142038'));
@@ -318,7 +337,7 @@ class MyDevice {
       toolsUuid = infoService.characteristics.firstWhere((c) =>
           c.uuid ==
           Guid(
-              '3565a918-f830-4fa1-b743-18d618fc5269')); //WifiStatus:WifiSSID/WifiError:BleStatus(users)
+              '89925840-3d11-4676-bf9b-62961456b570')); //WifiStatus:WifiSSID/WifiError:BleStatus(users)
 
       BluetoothService espService = services.firstWhere(
           (s) => s.uuid == Guid('33e3a05a-c397-4bed-81b0-30deb11495c7'));
@@ -327,6 +346,7 @@ class MyDevice {
 
       infoValues = await infoUuid.read();
       String str = utf8.decode(infoValues);
+      printLog('$str $infoValues');
       var partes = str.split(':');
       factoryMode = partes[2].contains('_F');
 
@@ -348,7 +368,7 @@ class MyDevice {
 
       return Future.value(true);
     } catch (e, stackTrace) {
-      print('Lcdtmbe $e $stackTrace');
+      printLog('Lcdtmbe $e $stackTrace');
       // handleManualError(e, stackTrace);
 
       return Future.value(false);
@@ -529,7 +549,7 @@ class QRScanPageState extends State<QRScanPage>
             navigatorKey.currentState!.pop(scanData.code);
           }
         } catch (e, stackTrace) {
-          print("Error: $e $stackTrace");
+          printLog("Error: $e $stackTrace");
           showToast('Error al leer QR');
           // handleManualError(e, stackTrace);
         }

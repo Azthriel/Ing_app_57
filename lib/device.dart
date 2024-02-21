@@ -1,4 +1,4 @@
-// ignore_for_file: avoid_print
+
 
 import 'dart:convert';
 import 'dart:io';
@@ -27,12 +27,12 @@ class MyDeviceTabsState extends State<MyDeviceTabs> {
     var fun =
         utf8.decode(data); //Wifi status | wifi ssid | ble status | nickname
     fun = fun.replaceAll(RegExp(r'[^\x20-\x7E]'), '');
-    print(fun);
+    printLog(fun);
     var parts = fun.split(':');
     if (parts[0] == 'WCS_CONNECTED' || parts[0] == '1') {
       nameOfWifi = parts[1];
       isWifiConnected = true;
-      print('sis $isWifiConnected');
+      printLog('sis $isWifiConnected');
       setState(() {
         textState = 'CONECTADO';
         statusColor = Colors.green;
@@ -40,7 +40,7 @@ class MyDeviceTabsState extends State<MyDeviceTabs> {
       });
     } else if (parts[0] == 'WCS_DISCONNECTED' || parts[0] == '0') {
       isWifiConnected = false;
-      print('non $isWifiConnected');
+      printLog('non $isWifiConnected');
 
       setState(() {
         textState = 'DESCONECTADO';
@@ -72,7 +72,7 @@ class MyDeviceTabsState extends State<MyDeviceTabs> {
   }
 
   void subscribeToWifiStatus() async {
-    print('Se subscribio a wifi');
+    printLog('Se subscribio a wifi');
     await myDevice.toolsUuid.setNotifyValue(true);
 
     final wifiSub =
@@ -106,7 +106,7 @@ class MyDeviceTabsState extends State<MyDeviceTabs> {
                   if (factoryMode) ...[
                     const Tab(icon: Icon(Icons.settings)),
                     const Tab(icon: Icon(Icons.tune)),
-                    const Tab(icon: Icon(Icons.stars_rounded)),
+                    const Tab(icon: Icon(Icons.catching_pokemon)),
                   ],
                   const Tab(icon: Icon(Icons.lightbulb_sharp)),
                   const Tab(icon: Icon(Icons.send)),
@@ -244,13 +244,13 @@ class MyDeviceTabsState extends State<MyDeviceTabs> {
                             children: [
                               ElevatedButton(
                                   onPressed: () {
-                                    var data = '57_IOT[4](1)';
+                                    var data = '015773_IOT[0](1)';
                                     try {
                                       myDevice.toolsUuid.write(data.codeUnits,
                                           withoutResponse: false);
-                                      print('a');
+                                      printLog('a');
                                     } catch (e, stackTrace) {
-                                      print('Fatal error 1 $e $stackTrace');
+                                      printLog('Fatal error 1 $e $stackTrace');
                                       showToast('Error al borrar NVS');
                                       // handleManualError(e, stackTrace);
                                     }
@@ -321,11 +321,10 @@ class CharState extends State<CharPage> {
   void sendDataToDevice() async {
     String dataToSend = textController.text;
     try {
-      String data = '57_IOT[5]($dataToSend)';
+      String data = '015773_IOT[4]($dataToSend)';
       await myDevice.toolsUuid.write(data.codeUnits);
-    } //57_IOT[5]($dataToSend)
-    catch (e, stackTrace) {
-      print('Error al enviar el numero de serie $e $stackTrace');
+    } catch (e, stackTrace) {
+      printLog('Error al enviar el numero de serie $e $stackTrace');
       showToast('Error al cambiar el número de serie');
       // handleManualError(e, stackTrace);
     }
@@ -338,7 +337,7 @@ class CharState extends State<CharPage> {
     return PopScope(
         canPop: false,
         onPopInvoked: (didPop) {
-          print('POPIE');
+          printLog('POPIE');
           showDialog(
             context: context,
             barrierDismissible: false,
@@ -356,7 +355,7 @@ class CharState extends State<CharPage> {
             },
           );
           Future.delayed(const Duration(seconds: 2), () async {
-            print('aca estoy');
+            printLog('aca estoy');
             await myDevice.device.disconnect();
             navigatorKey.currentState?.pop();
             navigatorKey.currentState?.pushReplacementNamed('/regbank');
@@ -435,7 +434,7 @@ class CharState extends State<CharPage> {
                           fontWeight: FontWeight.bold))),
                 ),
                 const SizedBox(height: 15),
-                                const Text.rich(
+                const Text.rich(
                   TextSpan(
                       text: 'Version de hardware del modulo IOT:',
                       style: (TextStyle(
@@ -567,11 +566,11 @@ class CalibrationState extends State<CalibrationPage> {
 
   void _setVcc(String newValue) {
     if (newValue.isEmpty) {
-      print('STRING EMPTY');
+      printLog('STRING EMPTY');
       return;
     }
 
-    print('changing VCC!');
+    printLog('changing VCC!');
 
     List<int> vccNewOffset = List<int>.filled(3, 0);
     vccNewOffset[0] = int.parse(newValue);
@@ -581,7 +580,7 @@ class CalibrationState extends State<CalibrationPage> {
     try {
       myDevice.calibrationUuid.write(vccNewOffset);
     } catch (e, stackTrace) {
-      print('Error al escribir vcc offset $e $stackTrace');
+      printLog('Error al escribir vcc offset $e $stackTrace');
       showToast('Error al escribir vcc offset');
       // handleManualError(e, stackTrace);
     }
@@ -602,7 +601,7 @@ class CalibrationState extends State<CalibrationPage> {
     try {
       myDevice.calibrationUuid.write(vrmsNewOffset);
     } catch (e, stackTrace) {
-      print('Error al setear vrms offset $e $stackTrace');
+      printLog('Error al setear vrms offset $e $stackTrace');
       showToast('Error al setear vrms offset');
       // handleManualError(e, stackTrace);
     }
@@ -623,7 +622,7 @@ class CalibrationState extends State<CalibrationPage> {
     try {
       myDevice.calibrationUuid.write(vrms02NewOffset);
     } catch (e, stackTrace) {
-      print('Error al setear vrms offset $e $stackTrace');
+      printLog('Error al setear vrms offset $e $stackTrace');
       showToast('Error al setear vrms02 offset');
       // handleManualError(e, stackTrace);
     }
@@ -633,7 +632,7 @@ class CalibrationState extends State<CalibrationPage> {
 
   void updateValues(List<int> newValues) async {
     _calValues = newValues;
-    print('Valores actualizados: $_calValues');
+    printLog('Valores actualizados: $_calValues');
 
     if (_calValues.isNotEmpty) {
       _vccOffset = _calValues[0];
@@ -642,13 +641,13 @@ class CalibrationState extends State<CalibrationPage> {
 
       _vcc = _calValues[3];
       _vcc += _calValues[4] << 8;
-      print(_vcc);
+      printLog(_vcc);
 
       double adcPwm = _calValues[5].toDouble();
       adcPwm += _calValues[6] << 8;
       adcPwm *= 2.001955034213099;
       _vrms = adcPwm.toInt();
-      print(_vrms);
+      printLog(_vrms);
 
       //
 
@@ -742,8 +741,8 @@ class CalibrationState extends State<CalibrationPage> {
     final workSub =
         myDevice.workUuid.onValueReceived.listen((List<int> status) {
       setState(() {
-        ppmCO = status[5] + status[6] << 8;
-        ppmCH4 = status[7] + status[8] << 8;
+        ppmCO = status[5] + (status[6] << 8);
+        ppmCH4 = status[7] + (status[8] << 8);
       });
     });
 
@@ -773,7 +772,7 @@ class CalibrationState extends State<CalibrationPage> {
             },
           );
           Future.delayed(const Duration(seconds: 2), () async {
-            print('aca estoy');
+            printLog('aca estoy');
             await myDevice.device.disconnect();
             navigatorKey.currentState?.pop();
             navigatorKey.currentState?.pushReplacementNamed('/regbank');
@@ -1195,16 +1194,16 @@ class RegulationState extends State<RegulationPage> {
   void _readValues() {
     setState(() {
       for (int i = 0; i < 10; i += 2) {
-        print('i = $i');
+        printLog('i = $i');
         int datas = value[i] + (value[i + 1] << 8);
         valores.add(datas.toString());
       }
       for (int j = 10; j < 15; j++) {
-        print('j = $j');
+        printLog('j = $j');
         valores.add(value[j].toString());
       }
       for (int k = 15; k < 29; k += 2) {
-        print('k = $k');
+        printLog('k = $k');
         int dataj = value[k] + (value[k + 1] << 8);
         valores.add(dataj.toString());
       }
@@ -1222,7 +1221,7 @@ class RegulationState extends State<RegulationPage> {
       await myDevice.regulationUuid.setNotifyValue(true);
       alreadySubReg = true;
     }
-    print('Me turbosuscribi a regulacion');
+    printLog('Me turbosuscribi a regulacion');
     final regSub =
         myDevice.regulationUuid.onValueReceived.listen((List<int> status) {
       updateValues(status);
@@ -1233,7 +1232,7 @@ class RegulationState extends State<RegulationPage> {
 
   void updateValues(List<int> data) {
     valores.clear();
-    print('Entro: $data');
+    printLog('Entro: $data');
     setState(() {
       for (int i = 0; i < 10; i += 2) {
         int datas = value[i] + (value[i + 1] << 8);
@@ -1319,7 +1318,7 @@ class RegulationState extends State<RegulationPage> {
             },
           );
           Future.delayed(const Duration(seconds: 2), () async {
-            print('aca estoy');
+            printLog('aca estoy');
             await myDevice.device.disconnect();
             navigatorKey.currentState?.pop();
             navigatorKey.currentState?.pushReplacementNamed('/regbank');
@@ -1388,42 +1387,14 @@ class ControlPage extends StatefulWidget {
 class ControlPageState extends State<ControlPage> {
   double _sliderValue = 100.0;
 
-  @override
-  void initState() {
-    super.initState();
-    try {
-      String data = '57_IOT[7](0)';
-      myDevice.toolsUuid.write(data.codeUnits);
-    } catch (e, stackTrace) {
-      print('Error al cortar el loop $e $stackTrace');
-      // handleManualError(e, stackTrace);
-    }
-  }
-
   void _sendValueToBle(int value) async {
     try {
       final data = [value];
       myDevice.lightUuid.write(data, withoutResponse: true);
     } catch (e, stackTrace) {
-      print('Error al mandar el valor del brillo $e $stackTrace');
+      printLog('Error al mandar el valor del brillo $e $stackTrace');
       // handleManualError(e, stackTrace);
     }
-  }
-
-  void goodbye() async {
-    try {
-      String data = '57_IOT[7](1)';
-      await myDevice.toolsUuid.write(data.codeUnits);
-    } catch (e, stackTrace) {
-      print('Error al volver al loop $e $stackTrace');
-      // handleManualError(e, stackTrace);
-    }
-  }
-
-  @override
-  void dispose() {
-    goodbye();
-    super.dispose();
   }
 
 //!Visual
@@ -1449,7 +1420,7 @@ class ControlPageState extends State<ControlPage> {
             },
           );
           Future.delayed(const Duration(seconds: 2), () async {
-            print('aca estoy');
+            printLog('aca estoy');
             await myDevice.device.disconnect();
             navigatorKey.currentState?.pop();
             navigatorKey.currentState?.pushReplacementNamed('/regbank');
@@ -1506,6 +1477,11 @@ class ControlPageState extends State<ControlPage> {
             setState(() {
               _sliderValue = value;
             });
+          },
+          onChangeEnd: (value) {
+            setState(() {
+              _sliderValue = value;
+            });
             _sendValueToBle(_sliderValue.toInt());
           },
         ),
@@ -1536,18 +1512,7 @@ class OTAState extends State<OTAPage> {
   @override
   void initState() {
     super.initState();
-    stopLoop();
     subToProgress();
-  }
-
-  void stopLoop() {
-    try {
-      String data = '57_IOT[7](0)';
-      myDevice.toolsUuid.write(data.codeUnits);
-    } catch (e, stackTrace) {
-      print('Error al cortar el loop $e $stackTrace');
-      // handleManualError(e, stackTrace);
-    }
   }
 
   void sendOTAWifi(int value) async {
@@ -1573,22 +1538,22 @@ class OTAState extends State<OTAPage> {
 
     if (otaPIC == true) {
       try {
-        String data = '57_IOT[9]($url)';
+        String data = '015773_IOT[9]($url)';
         await myDevice.toolsUuid.write(data.codeUnits);
-        print('Me puse corte re kawaii');
+        printLog('Me puse corte re kawaii');
       } catch (e, stackTrace) {
-        print('Error al enviar la OTA $e $stackTrace');
+        printLog('Error al enviar la OTA $e $stackTrace');
         // handleManualError(e, stackTrace);
         showToast('Error al enviar OTA');
       }
       showToast('Enviando OTA PIC...');
     } else {
       try {
-        String data = '57_IOT[8]($url)';
+        String data = '015773_IOT[2]($url)';
         await myDevice.toolsUuid.write(data.codeUnits);
-        print('Si mandé ota');
+        printLog('Si mandé ota');
       } catch (e, stackTrace) {
-        print('Error al enviar la OTA $e $stackTrace');
+        printLog('Error al enviar la OTA $e $stackTrace');
         // handleManualError(e, stackTrace);
         showToast('Error al enviar OTA');
       }
@@ -1597,7 +1562,7 @@ class OTAState extends State<OTAPage> {
   }
 
   void sendOTABLE(int value) async {
-    String data = '57_IOT[7](0)';
+    String data = '015773_IOT[7](0)';
     myDevice.toolsUuid.write(data.codeUnits);
     showToast("Enviando OTA...");
 
@@ -1635,13 +1600,13 @@ class OTAState extends State<OTAPage> {
           (size >> 16) & 0xFF,
           (size >> 24) & 0xFF
         ];
-
-        await myDevice.infoUuid.write(sizeInBytes, withoutResponse: false);
+        String data = '015773_IOT[3]($sizeInBytes)';
+        await myDevice.toolsUuid.write(data.codeUnits);
         sizeWasSend = true;
 
         sendchunk();
       } catch (e, stackTrace) {
-        print('Error al enviar la OTA $e $stackTrace');
+        printLog('Error al enviar la OTA $e $stackTrace');
         // handleManualError(e, stackTrace);
         showToast("Error al enviar OTA");
       }
@@ -1653,7 +1618,7 @@ class OTAState extends State<OTAPage> {
       int mtuSize = 255;
       await writeLarge(firmwareGlobal, mtuSize);
     } catch (e, stackTrace) {
-      print('El error es: $e $stackTrace');
+      printLog('El error es: $e $stackTrace');
       showToast('Error al enviar chunk');
       // handleManualError(e, stackTrace);
     }
@@ -1662,14 +1627,14 @@ class OTAState extends State<OTAPage> {
   Future<void> writeLarge(List<int> value, int mtu, {int timeout = 15}) async {
     int chunk = mtu - 3;
     for (int i = 0; i < value.length; i += chunk) {
-      print('Mande chunk');
+      printLog('Mande chunk');
       List<int> subvalue = value.sublist(i, min(i + chunk, value.length));
       await myDevice.infoUuid.write(subvalue, withoutResponse: false);
     }
   }
 
   void subToProgress() async {
-    print('Entre aquis mismito');
+    printLog('Entre aquis mismito');
     if (!alreadySubOta) {
       await myDevice.otaUuid.setNotifyValue(true);
       alreadySubOta = true;
@@ -1680,7 +1645,7 @@ class OTAState extends State<OTAPage> {
         fun = fun.replaceAll(RegExp(r'[^\x20-\x7E]'), '');
         var parts = fun.split(':');
         if (parts[0] == '57_IOT_OTAPR') {
-          print('Se recibio');
+          printLog('Se recibio');
           setState(() {
             if (otaPIC == true) {
               picprogressValue = int.parse(parts[1]) / 100;
@@ -1688,18 +1653,18 @@ class OTAState extends State<OTAPage> {
               progressValue = int.parse(parts[1]) / 100;
             }
           });
-          print('Progreso: ${parts[1]}');
+          printLog('Progreso: ${parts[1]}');
         } else {
           switch (fun) {
             case '57_IOT_OTA:START':
-              print('Header se recibio correctamente');
+              printLog('Header se recibio correctamente');
               break;
             case '57_IOT_OTA:SUCCESS':
               sizeWasSend = false;
               if (otaPIC == true) {
                 otaPIC = false;
               } else {
-                print('Estreptococo');
+                printLog('Estreptococo');
                 String data = '57_IOT[7](1)';
                 myDevice.toolsUuid.write(data.codeUnits);
                 navigatorKey.currentState?.pushReplacementNamed('/regbank');
@@ -1735,7 +1700,7 @@ class OTAState extends State<OTAPage> {
           }
         }
       } catch (e, stackTrace) {
-        print('Error malevolo: $e $stackTrace');
+        printLog('Error malevolo: $e $stackTrace');
         // handleManualError(e, stackTrace);
         // showToast('Error al actualizar progreso');
       }
@@ -1743,19 +1708,8 @@ class OTAState extends State<OTAPage> {
     myDevice.device.cancelWhenDisconnected(otaSub);
   }
 
-  void goodbye() async {
-    try {
-      String data = '57_IOT[7](1)';
-      await myDevice.toolsUuid.write(data.codeUnits);
-    } catch (e, stackTrace) {
-      print('Error al volver al loop $e $stackTrace');
-      // handleManualError(e, stackTrace);
-    }
-  }
-
   @override
   void dispose() {
-    goodbye();
     otaPIC = false;
     atemp = false;
     super.dispose();
@@ -1784,7 +1738,7 @@ class OTAState extends State<OTAPage> {
           },
         );
         Future.delayed(const Duration(seconds: 2), () async {
-          print('aca estoy');
+          printLog('aca estoy');
           await myDevice.device.disconnect();
           navigatorKey.currentState?.pop();
           navigatorKey.currentState?.pushReplacementNamed('/regbank');
@@ -2186,7 +2140,7 @@ class DebugState extends State<DebugPage> {
 
   void updateDebugValues(List<int> values) {
     debug.clear();
-    print('Aqui esta esto: $values');
+    printLog('Aqui esta esto: $values');
 
     setState(() {
       for (int i = 0; i < values.length; i += 2) {
@@ -2201,7 +2155,7 @@ class DebugState extends State<DebugPage> {
       await myDevice.debugUuid.setNotifyValue(true);
       alreadySubDebug = true;
     }
-    print('Me turbosuscribi a regulacion');
+    printLog('Me turbosuscribi a regulacion');
     final debugSub =
         myDevice.debugUuid.onValueReceived.listen((List<int> status) {
       updateDebugValues(status);
@@ -2261,7 +2215,7 @@ class DebugState extends State<DebugPage> {
             },
           );
           Future.delayed(const Duration(seconds: 2), () async {
-            print('aca estoy');
+            printLog('aca estoy');
             await myDevice.device.disconnect();
             navigatorKey.currentState?.pop();
             navigatorKey.currentState?.pushReplacementNamed('/regbank');
@@ -2317,7 +2271,7 @@ class DebugState extends State<DebugPage> {
                               child: Slider(
                                 value: double.parse(debug[index]),
                                 min: 0,
-                                max: 1023,
+                                max: 1024,
                                 onChanged: null,
                                 onChangeStart: null,
                               ),
@@ -2347,7 +2301,7 @@ class LoadState extends State<LoadingPage> {
   @override
   void initState() {
     super.initState();
-    print('HOSTIAAAAAAAAAAAAAAAAAAAAAAAA');
+    printLog('HOSTIAAAAAAAAAAAAAAAAAAAAAAAA');
     precharge().then((precharge) {
       if (precharge == true) {
         showToast('Dispositivo conectado exitosamente');
@@ -2370,15 +2324,15 @@ class LoadState extends State<LoadingPage> {
         workValues = await myDevice.workUuid.read();
       }
       toolsValues = await myDevice.toolsUuid.read();
-      print('Valores calibracion: $calibrationValues');
-      print('Valores regulacion: $regulationValues');
-      print('Valores tools: $toolsValues');
-      print('Valores debug: $debugValues');
-      print('Valores trabajo: $workValues');
+      printLog('Valores calibracion: $calibrationValues');
+      printLog('Valores regulacion: $regulationValues');
+      printLog('Valores tools: $toolsValues');
+      printLog('Valores debug: $debugValues');
+      printLog('Valores trabajo: $workValues');
 
       return Future.value(true);
     } catch (e, stackTrace) {
-      print('Error en la precarga $e $stackTrace');
+      printLog('Error en la precarga $e $stackTrace');
       showToast('Error en la precarga');
       // handleManualError(e, stackTrace);
       return Future.value(false);
@@ -2406,7 +2360,7 @@ class LoadState extends State<LoadingPage> {
           ),
         ).then((_) {
           Future.delayed(const Duration(seconds: 2), () async {
-            print('Yendome');
+            printLog('Yendome');
             await myDevice.device.disconnect();
             navigatorKey.currentState?.pop();
             navigatorKey.currentState?.pushReplacementNamed('/regbank');
@@ -2437,51 +2391,4 @@ class LoadState extends State<LoadingPage> {
   }
 }
 
-//DISCONECT //ANOTHER PAGE
 
-class DisconectPage extends StatefulWidget {
-  const DisconectPage({super.key});
-  @override
-  DisconectState createState() => DisconectState();
-}
-
-class DisconectState extends State<DisconectPage> {
-  MyDevice myDevice = MyDevice();
-  @override
-  void initState() {
-    super.initState();
-    disconect();
-  }
-
-  void disconect() async {
-    try {
-      Future.delayed(const Duration(seconds: 2), () {
-        String data = '57_IOT[6](1)';
-        myDevice.toolsUuid.write(data.codeUnits);
-        showToast('Dispositivos desconectados exitosamente');
-      });
-    } catch (e, stackTrace) {
-      print('Error al desconectar a todos los usuarios $e $stackTrace');
-      // handleManualError(e, stackTrace);
-    }
-  }
-
-//!Visual
-  @override
-  Widget build(BuildContext context) {
-    return const Scaffold(
-        backgroundColor: Color.fromARGB(255, 1, 18, 28),
-        body: Center(
-            child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            CircularProgressIndicator(
-              color: Color.fromARGB(255, 29, 163, 169),
-            ),
-            SizedBox(height: 20),
-            Text('Desconectando...',
-                style: TextStyle(color: Color.fromARGB(255, 29, 163, 169))),
-          ],
-        )));
-  }
-}

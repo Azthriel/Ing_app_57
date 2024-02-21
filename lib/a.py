@@ -1,448 +1,251 @@
-import requests
-from requests.exceptions import ConnectionError
-from requests.exceptions import Timeout
+import paho.mqtt.client as mqtt
+import ssl
+import time
 
-nickname = ""
-snHeader = 0
-initialnumber = 0
-finalnumber = 0
-newDevices = True
+broker = 'nee8a41e.ala.us-east-1.emqxsl.com'
+port = 8883
+username = '015773_IOT'
+password = '015773_IOT'
+ca_cert_route = 'emqx_ca.crt'
 
-attempts_number = 10
+sleep_time = 6
+
+##################################
 
 device_list = []
-reg_device_list = []
+response_list = []
+data_dict = {}
 
-def register():
+def set_sleep_time(new_sleep_time):
+    global sleep_time
+    sleep_time = new_sleep_time
+    print('NEW SLEEP TIME SAVED: ' + str(new_sleep_time))
 
-    milista = []  # to gs
+def make_txt(): # pregunta al usuario si quiere una copia de la data
+    inp = input('¿Deseas crear un archivo? (y/n)\n')
+
+    if inp.lower() == 'y':
+        name = input('¿Nombre del archivo?\n')
+        with open(name + '.txt', 'w') as file:
+            for devs, datos in sorted(data_dict.items(), key=lambda x: x[0][-2:]):
+                file.write(f"{devs}: {datos}\n")
+        print(f"Archivo {name}.txt creado.")
+    else:
+        print("No se creará archivo.")
+
+    data_dict.clear()  # Limpiar el diccionario
+
+def register(): # esta al recontra pedo
 
     for devs in range(len(device_list)):
         print("LOADING DEVICE: " + str(device_list[devs]))
-        milista.append(device_list[devs])
+        #client.subscribe(topic='015773_IOT/' + str(device_list[devs]), qos=0)
 
-def diagnosis_v2():
-    
-    milista = []  # to gs
-    
-    for devs in range(len(device_list)):
+def diagnosis():
 
-        url = 'http://RB_IOT_' + str(device_list[devs]) + ':8080/DIAGNOSIS_OK'
-        print(url)
+    data_dict.clear() # start with a new fresh dict
+    client.publish(topic='015773_RB', payload='DIAGNOSIS_OK', qos=1)
 
-        ############
+    print('SLEEPING TO RECEIVE DATA')
+    time.sleep(sleep_time)
 
-        for attempts in range(attempts_number):
+    print('READING THE DATA: ')
 
-            print('attempt (' + str(attempts + 1) + '): ', end='')
+    for devs in device_list:
+        if devs in data_dict:
+            None
+        else:
+            data_dict[devs] = 'fail' # fills the numbers not found
 
-            try:
-                response = requests.get(
-                    url=url, allow_redirects=False, timeout=3)
-            except ConnectionError:
-                print('fail')
+    # DATOS DE RETORNO -> d_ok:ssid:ip:sv
 
-                if(attempts == int(attempts_number) - 1): # last attempt
-                    milista.append('CONNECTION_ERROR')
-            except Timeout:
-                print('fail')
-                if(attempts == int(attempts_number) - 1): # last attempt
-                    milista.append('CONNECTION_TIMED_OUT')
-            else:
-                if response.status_code == 200:
-                    if str(response.content.strip()).find('DIAGNOSIS_OK') != -1:
-                        ##
-                        sv = str(response.content)
-                        sv = sv[sv.find('(') + 1: sv.find(')')]
-                        ##
-                        print('success -> sv: ' + sv)
-                        milista.append('OK -> sv: ' + sv)
-                        break
-                    else:
-                        print('fail')
-                        if(attempts == int(attempts_number) - 1): # last attempt
-                            milista.append('WRONG_RESPONSE')
-                else:
-                    print('fail')
-                    if(attempts == int(attempts_number) - 1): # last attempt
-                        milista.append('WRONG_STATUS_CODE')
+    # Función para obtener los últimos dos caracteres de una cadena
+    def split(clave):
+        return clave[-2:]
+    for devs in sorted(data_dict, key=split):
+        print(f"DEVICE: ({devs}, {data_dict[devs]})")
 
-    print('\n\nDIAGNOSIS -------------------------------------------------\n')
-    for devs in range(len(device_list)):
-        print(device_list[devs] + '  ->  ' + milista[devs])
-    print('\nDEVICE NUMBER: ----------------- ' + str(len(device_list)) + '\n')
-    print('-----------------------------------------------------------\n\n')
+    make_txt()
 
-def diagnosis_ch4_v2():
-    milista = []  # to gs
-    
-    for devs in range(len(device_list)):
+    print('DIAGNOSIS DONE\n')
 
-        url = 'http://RB_IOT_' + str(device_list[devs]) + ':8080/DIAGNOSIS_CH4'
-        print(url)
+def regulation():
 
-        ############
+    ####
 
-        for attempts in range(attempts_number):
+    rp = input('regpoint to do: ')
+    temp = input('temperature: ')
 
-            print('attempt (' + str(attempts + 1) + '): ', end='')
+    ####
 
-            try:
-                response = requests.get(
-                    url=url, allow_redirects=False, timeout=3)
-            except ConnectionError:
-                print('fail')
+    data_dict.clear() # start with a new fresh dict
+    client.publish(topic='015773_RB', payload='REGPOINT_' + str(rp) + '_(' + str(temp) + ')', qos=1)
 
-                if(attempts == int(attempts_number) - 1): # last attempt
-                    milista.append('CONNECTION_ERROR')
-            except Timeout:
-                print('fail')
-                if(attempts == int(attempts_number) - 1): # last attempt
-                    milista.append('CONNECTION_TIMED_OUT')
-            else:
-                if response.status_code == 200:
-                    if str(response.content.strip()).find('DIAGNOSIS_CH4') != -1:
-                        
-                        ##
-                        payload = str(response.content)
-                        encoded = str(
-                            payload[payload.find('(') + 1: payload.find(')')])
+    print('SLEEPING TO RECEIVE DATA')
+    time.sleep(sleep_time)
 
-                        low, high = map(int, encoded.split(":"))
-                        ppmch4max = (high << 8) | low
+    print('READING THE DATA: ')
 
-                        print('success -> ppmch4max: ' + str(ppmch4max))
-                        ##
-                        
-                        milista.append('OK -> ppmch4max: ' + str(ppmch4max))
-                        break
-                    else:
-                        print('fail')
-                        if(attempts == int(attempts_number) - 1): # last attempt
-                            milista.append('WRONG_RESPONSE')
-                else:
-                    print('fail')
-                    if(attempts == int(attempts_number) - 1): # last attempt
-                        milista.append('WRONG_STATUS_CODE')
+    for devs in device_list:
+        if devs in data_dict:
+            None
+        else:
+            data_dict[devs] = 'fail' # fills the numbers not found
 
-    print('\n\nDIAGNOSIS_CH4 -------------------------------------------------\n')
-    for devs in range(len(device_list)):
-        print(device_list[devs] + '  ->  ' + milista[devs])
-    print('\nDEVICE NUMBER: ----------------- ' + str(len(device_list)) + '\n')
-    print('-----------------------------------------------------------\n\n')
+    # DATOS DE RETORNO -> rp_ok:ectemp:rs
 
-def diagnosis_co_v2():
+    # Función para obtener los últimos dos caracteres de una cadena
+    def split(clave):
+        return clave[-2:]
+    for devs in sorted(data_dict, key=split):
+        print(f"DEVICE: ({devs}, {data_dict[devs]})")
 
-    milista = []  # to gs
-    
-    for devs in range(len(device_list)):
+    make_txt()
 
-        url = 'http://RB_IOT_' + str(device_list[devs]) + ':8080/DIAGNOSIS_CO'
-        print(url)
-
-        ############
-
-        for attempts in range(attempts_number):
-
-            print('attempt (' + str(attempts + 1) + '): ', end='')
-
-            try:
-                response = requests.get(
-                    url=url, allow_redirects=False, timeout=3)
-            except ConnectionError:
-                print('fail')
-
-                if(attempts == int(attempts_number) - 1): # last attempt
-                    milista.append('CONNECTION_ERROR')
-            except Timeout:
-                print('fail')
-                if(attempts == int(attempts_number) - 1): # last attempt
-                    milista.append('CONNECTION_TIMED_OUT')
-            else:
-                if response.status_code == 200:
-                    if str(response.content.strip()).find('DIAGNOSIS_CO') != -1:
-                        
-                        ##
-                        payload = str(response.content)
-                        encoded = str(
-                            payload[payload.find('(') + 1: payload.find(')')])
-
-                        low, high = map(int, encoded.split(":"))
-                        ppmcomax = (high << 8) | low
-
-                        print('success -> ppmcomax: ' + str(ppmcomax))
-                        ##
-                        
-                        milista.append('OK -> ppmcomax: ' + str(ppmcomax))
-                        break
-                    else:
-                        print('fail')
-                        if(attempts == int(attempts_number) - 1): # last attempt
-                            milista.append('WRONG_RESPONSE')
-                else:
-                    print('fail')
-                    if(attempts == int(attempts_number) - 1): # last attempt
-                        milista.append('WRONG_STATUS_CODE')
-
-    print('\n\nDIAGNOSIS_CO -------------------------------------------------\n')
-    for devs in range(len(device_list)):
-        print(device_list[devs] + '  ->  ' + milista[devs])
-    print('\nDEVICE NUMBER: ----------------- ' + str(len(device_list)) + '\n')
-    print('-----------------------------------------------------------\n\n')
-
-def regulation_v2():
-
-    regp = int(input("Enter the regulation point: "))
-    temp = int(input("Enter the regulation bank temperature: "))
-
-    milista = []  # to gs
-    
-    for devs in range(len(device_list)):
-
-        url = 'http://RB_IOT_' + str(device_list[devs]) + ':8080/REGP_' + str(regp) + '_(' + str(temp) + ')'
-        print(url)
-
-        ############
-
-        for attempts in range(attempts_number):
-
-            print('attempt (' + str(attempts + 1) + '): ', end='')
-
-            try:
-                response = requests.get(
-                    url=url, allow_redirects=False, timeout=3)
-            except ConnectionError:
-                print('fail')
-
-                if(attempts == int(attempts_number) - 1): # last attempt
-                    milista.append('CONNECTION_ERROR')
-            except Timeout:
-                print('fail')
-                if(attempts == int(attempts_number) - 1): # last attempt
-                    milista.append('CONNECTION_TIMED_OUT')
-            else:
-                if response.status_code == 200:
-                    if str(response.content.strip()).find('PAYLOAD') != -1:
-                        payload = str(response.content)
-
-                        start = payload.find('PAYLOAD(') + 8
-                        end = payload.find(')', start)
-
-                        payload = payload[start:end].split(':')
-                        
-                        encoded_list = [int(num) for num in payload]
-
-                        #
-                        ectemp = encoded_list[0]
-                        rs = encoded_list[1]
-                        #
-
-                        print('success -> ectemp(' + str(ectemp) + ')' + '  ---  rs -> (' + str(rs) + ')')
-                        milista.append('OK -> ectemp(' + str(ectemp) + ')' + '  ---  rs -> (' + str(rs) + ')')
-                        break
-                    else:
-                        print('fail')
-                        if(attempts == int(attempts_number) - 1): # last attempt
-                            milista.append('WRONG_RESPONSE')
-                else:
-                    print('fail')
-                    if(attempts == int(attempts_number) - 1): # last attempt
-                        milista.append('WRONG_STATUS_CODE')
-
-    print('\n\REGP (' + str(regp) + ') -------------------------------------------------\n')
-    for devs in range(len(device_list)):
-        print(device_list[devs] + '  ->  ' + milista[devs])
-    print('\nDEVICE NUMBER: ----------------- ' + str(len(device_list)) + '\n')
-    print('-----------------------------------------------------------\n\n')
+    print('REGPOINT DONE\n')
 
 def reg_done():
-    milista = []  # to gs
-    
-    for devs in range(len(device_list)):
 
-        url = 'http://RB_IOT_' + str(device_list[devs]) + ':8080/REG_DONE'
-        print(url)
+    data_dict.clear() # start with a new fresh dict
+    client.publish(topic='015773_RB', payload='REG_DONE', qos=1)
 
-        ############
+    print('SLEEPING TO RECEIVE DATA')
+    time.sleep(sleep_time)
 
-        for attempts in range(attempts_number):
+    print('READING THE DATA: ')
 
-            print('attempt (' + str(attempts + 1) + '): ', end='')
-
-            try:
-                response = requests.get(
-                    url=url, allow_redirects=False, timeout=3)
-            except ConnectionError:
-                print('fail')
-
-                if(attempts == int(attempts_number) - 1): # last attempt
-                    milista.append('CONNECTION_ERROR')
-            except Timeout:
-                print('fail')
-                if(attempts == int(attempts_number) - 1): # last attempt
-                    milista.append('CONNECTION_TIMED_OUT')
-            else:
-                if response.status_code == 200:
-                    if str(response.content.strip()).find('REG_DONE_OK') != -1:
-
-                        print('success')
-                        milista.append('OK')
-                        break
-                    else:
-                        print('fail')
-                        if(attempts == int(attempts_number) - 1): # last attempt
-                            milista.append('WRONG_RESPONSE')
-                else:
-                    print('fail')
-                    if(attempts == int(attempts_number) - 1): # last attempt
-                        milista.append('WRONG_STATUS_CODE')
-
-    print('\n\REG_DONE -------------------------------------------------\n')
-    for devs in range(len(device_list)):
-        print(device_list[devs] + '  ->  ' + milista[devs])
-    print('\nDEVICE NUMBER: ----------------- ' + str(len(device_list)) + '\n')
-    print('-----------------------------------------------------------\n\n')
-
-def pic_update():
-    milista = []  # to gs
-
-    for devs in range(len(device_list)):
-
-        url = 'http://RB_IOT_' + \
-            str(device_list[devs]) + \
-            ':8080/PIC_UPDATE(https://github.com/CrisDores/57_IOT_PUBLIC/raw/main/57_ota_factory_fw/firmware.hex)'
-
-        print(url)
-
-        retry = False
-
-        try:
-            response = requests.get(
-                url=url, allow_redirects=False, timeout=3)
-        except ConnectionError:
-            retry = True
-
-        except Timeout:
-            retry = True
+    for devs in device_list:
+        if devs in data_dict:
+            None
         else:
-            if response.status_code == 200:
-                if str(response.content.strip()).find('PIC_UPDATE_OK') != -1:
-                    milista.append('OK')
-                else:
-                    retry = True
-            else:
-                retry = True
+            data_dict[devs] = 'fail' # fills the numbers not found
 
-        if retry == True:
+    # DATOS DE RETORNO -> rd_ok:rsch4_al:rsco_al
 
-            print('retry!')
+    # Función para obtener los últimos dos caracteres de una cadena
+    def split(clave):
+        return clave[-2:]
+    for devs in sorted(data_dict, key=split):
+        print(f"DEVICE: ({devs}, {data_dict[devs]})")
 
-            try:
-                response = requests.get(
-                    url=url, allow_redirects=False, timeout=3)
-            except ConnectionError:
-                milista.append('CONNECTION_ERROR')
+    make_txt()
 
-            except Timeout:
-                milista.append('CONNECTION_TIMED_OUT')
-            else:
-                if response.status_code == 200:
-                    if str(response.content.strip()).find('PIC_UPDATE_OK') != -1:
-                        milista.append('OK')
-                    else:
-                        milista.append('WRONG_RESPONSE')
-                else:
-                    milista.append('WRONG_STATUS_CODE')
+    print('REG_DONE DONE\n')
 
-        #################################################################################
-
-    # url = "https://script.google.com/macros/s/AKfycbxZuEBeomsTvrataOexpjMLqUY88kQLFl-LVM6lBudVjoKk0DT9It1c4LCh-f_F8gHyig/exec"
-
-    # statusJson = json.dumps(milista)
-    # data = {
-    #     "status": statusJson,
-    #     "nickname": nickname,
-    # }
-
-    # requests.get(url, params=data)
-
-def esp_update_v2():
+##------------------------------##
     
-    milista = []  # to gs
-    
-    for devs in range(len(device_list)):
+def diagnosis_gas():
 
-        url = 'http://RB_IOT_' + \
-            str(device_list[devs]) + \
-            ':8080/ESP_UPDATE(https://github.com/CrisDores/57_IOT_PUBLIC/raw/main/57_ota_factory_fw/firmware.bin)'
-        print(url)
+    data_dict.clear() # start with a new fresh dict
+    client.publish(topic='015773_RB', payload='DIAGNOSIS_CH4', qos=1)
 
-        ############
+    print('SLEEPING TO RECEIVE DATA')
+    time.sleep(sleep_time)
 
-        for attempts in range(attempts_number):
+    print('READING THE DATA: ')
 
-            print('attempt (' + str(attempts + 1) + '): ', end='')
+    for devs in device_list:
+        if devs in data_dict:
+            None
+        else:
+            data_dict[devs] = 'fail' # fills the numbers not found
 
-            try:
-                response = requests.get(
-                    url=url, allow_redirects=False, timeout=3)
-            except ConnectionError:
-                print('fail')
+    # DATOS DE RETORNO -> dg_ok:ppmch4:rsch4:actual_temp
 
-                if(attempts == int(attempts_number) - 1): # last attempt
-                    milista.append('CONNECTION_ERROR')
-            except Timeout:
-                print('fail')
-                if(attempts == int(attempts_number) - 1): # last attempt
-                    milista.append('CONNECTION_TIMED_OUT')
-            else:
-                if response.status_code == 200:
-                    if str(response.content.strip()).find('ESP_UPDATE_OK') != -1:
-                        print('success')
-                        milista.append('OK')
-                        break
-                    else:
-                        print('fail')
-                        if(attempts == int(attempts_number) - 1): # last attempt
-                            milista.append('WRONG_RESPONSE')
-                else:
-                    print('fail')
-                    if(attempts == int(attempts_number) - 1): # last attempt
-                        milista.append('WRONG_STATUS_CODE')
+    # Función para obtener los últimos dos caracteres de una cadena
+    def split(clave):
+        return clave[-2:]
+    for devs in sorted(data_dict, key=split):
+        print(f"DEVICE: ({devs}, {data_dict[devs]})")
 
-    print('\n\nESP_UPDATE -------------------------------------------------\n')
-    for devs in range(len(device_list)):
-        print(device_list[devs] + '  ->  ' + milista[devs])
-    print('\nDEVICE NUMBER: ----------------- ' + str(len(device_list)) + '\n')
-    print('-----------------------------------------------------------\n\n')
+    make_txt()
 
+    print('DIAGNOSIS_CH4 DONE\n')
 
-def wipe():
+def diagnosis_co():
 
-    url = 'https://script.google.com/macros/s/AKfycbyLuB-1LCUuQ2AWAhCb2ZE_FVWrdObKyLWtl6SAdsxiwC-lneDk-jlPSHUhS4U2RRRq/exec'
+    data_dict.clear() # start with a new fresh dict
+    client.publish(topic='015773_RB', payload='DIAGNOSIS_CO', qos=1)
 
-    requests.post(url=url)
+    print('SLEEPING TO RECEIVE DATA')
+    time.sleep(sleep_time)
 
+    print('READING THE DATA: ')
 
-def specificWipe(column):
-    url = 'https://script.google.com/macros/s/AKfycbyLuB-1LCUuQ2AWAhCb2ZE_FVWrdObKyLWtl6SAdsxiwC-lneDk-jlPSHUhS4U2RRRq/exec'
+    for devs in device_list:
+        if devs in data_dict:
+            None
+        else:
+            data_dict[devs] = 'fail' # fills the numbers not found
 
-    data = {
-        'column': column
-    }
+    # DATOS DE RETORNO -> dc_ok:ppmco:rsco:actual_temp
 
-    requests.get(url, params=data)
+    # Función para obtener los últimos dos caracteres de una cadena
+    def split(clave):
+        return clave[-2:]
+    for devs in sorted(data_dict, key=split):
+        print(f"DEVICE: ({devs}, {data_dict[devs]})")
 
+    make_txt()
 
-if __name__ == '__main__':
-    print('WELCOME')
+    print('DIAGNOSIS_CO DONE\n')
 
-    nickname = str(input("Please, enter a nickname: "))
+def esp_update():
 
-    while (True):
+    url = 'https://github.com/CrisDores/57_IOT_PUBLIC/raw/main/57_ota_factory_fw/firmware.bin'
 
-        if newDevices == True:
+    data_dict.clear() # start with a new fresh dict
+    client.publish(topic='015773_RB', payload='ESP_UPDATE(' + str(url) + ')', qos=1)
 
+    print('SLEEPING TO RECEIVE DATA')
+    time.sleep(sleep_time)
+
+    print('READING THE DATA: ')
+
+    for devs in device_list:
+        if devs in data_dict:
+            None
+        else:
+            data_dict[devs] = 'fail' # fills the numbers not found
+
+    # DATOS DE RETORNO -> eu_ok:ssid:ip
+
+    # Función para obtener los últimos dos caracteres de una cadena
+    def split(clave):
+        return clave[-2:]
+    for devs in sorted(data_dict, key=split):
+        print(f"DEVICE: ({devs}, {data_dict[devs]})")
+
+    make_txt()
+
+    print('ESP_UPDATE DONE\n')
+
+##################################
+
+def on_connect(client, userdata, flags, rc):
+    print("Conectado con código de resultado " + str(rc) + '\n\n')
+    client.subscribe(topic='015773_IOT/+', qos=1)
+
+def on_message(client, userdata, msg):
+    print('MESSAGE ARRIVED')
+
+    # Extraer el número de serie del topic
+    topic_parts = msg.topic.split('/')
+    if len(topic_parts) > 1:
+        serial_number = topic_parts[1]
+
+    payload_str = msg.payload.decode()  # Decodificar el payload de bytes a string
+    data_parts = payload_str.split(':')  # Dividir el payload por ':'
+
+    data_dict[serial_number] = data_parts
+
+def my_loop():
+
+    if(client.is_connected()):
+        print('bienvenido a regbank2')
+        inp = input('(n)new_devices // (m)make_register // (d)diagnosis // (r)regulation\n(dg)diagnosis_gas // (dc)diagnosis_co // (rd)reg_done\n(eu)esp_update // (pu)pic_update\n(nt)new_sleep_time\n')
+
+        if(inp == 'n' or inp == 'N'):
             snHeader = int(input("Enter the header: "))
             initialnumber = int(input("Enter the initial value: "))
             finalnumber = int(input("Enter the final value: "))
@@ -450,86 +253,46 @@ if __name__ == '__main__':
             for devs in range(initialnumber, finalnumber + 1):
                 if devs < 10:
                     device_list.append(str(snHeader) + '0' + str(devs))
-                    reg_device_list.append(str(snHeader) + '0' + str(devs))
                 else:
                     device_list.append(str(snHeader) + str(devs))
-                    reg_device_list.append(str(snHeader) + str(devs))
-
-            newDevices = False
-
-        print('"M" for Register/"D" for Diagnosis/"R" for regulation')
-        print('"W" for Wipe sheet/"N" for new devices/"K" for kill program')
-        inp = input()
-
-        if inp == 'M' or inp == 'm':
+        elif(inp.lower() == 'm'):
             print('RUNNING REGISTER')
             register()
-        elif inp == 'D' or inp == 'd':
+        elif(inp.lower() == 'd'):
             print('RUNNING DIAGNOSIS')
-            diagnosis_v2()
-        elif inp == 'dg' or inp == 'DG':
-            print('RUNNING GAS DIAGNOSIS')
-            diagnosis_ch4_v2()
-        elif inp == 'dc' or inp == 'DC':
-            print('RUNNING CO DIAGNOSIS')
-            diagnosis_co_v2()
-        elif inp == 'pu' or inp == 'PU':
-            print('RUNNING PIC UPDATE')
-            pic_update()
-        elif inp == 'eu' or inp == 'EU':
-            print('RUNNING ESP UPDATE')
-            esp_update_v2()
-        elif inp == 'R' or inp == 'r':
-            print('RUNNING REGULATION')
-            regulation_v2()
-        elif inp == 'RD' or inp == 'rd':
+            diagnosis()
+        elif(inp.lower() == 'r'):
+            print('RUNNING REGPOINT')
+            regulation()
+        elif(inp.lower() == 'rd'):
+            print("RUNNING REGDONE")
             reg_done()
-        elif inp == 'W' or inp == 'w':
-            print('WHAT COLUMN DO YOU WANNA WIPE?')
-            print('"M" for Register/"D" for Diagnosis/"R" for regulation')
-            print('Press anything else to wipe the entire sheet')
-            ctd = input("ENTER THE COLUMN TO WIPE: ")
-            if ctd == 'm' or ctd == 'M':
-                print('WIPING REGISTER')
-                specificWipe(1)
-            elif ctd == 'd' or ctd == 'D':
-                print('WIPING DIAGNOSIS')
-                specificWipe(2)
-            elif ctd == 'r' or ctd == 'R':
-                print('Which one?')
-                rp = int(input('Select the RP 1-10: '))
-                print('WIPING RP' + str(rp))
-                if rp == 1:
-                    specificWipe(4)
-                elif rp == 2:
-                    specificWipe(5)
-                elif rp == 3:
-                    specificWipe(6)
-                elif rp == 4:
-                    specificWipe(7)
-                elif rp == 5:
-                    specificWipe(8)
-                elif rp == 6:
-                    specificWipe(9)
-                elif rp == 7:
-                    specificWipe(10)
-                elif rp == 8:
-                    specificWipe(11)
-                elif rp == 9:
-                    specificWipe(12)
-                elif rp == 10:
-                    specificWipe(13)
-                else:
-                    print('Next time. think twice...')
-                    break
-            else:
-                print('WIPING SHEET')
-                wipe()
-        elif inp == 'N' or inp == 'n':
-            print('HELLO AGAIN')
-            newDevices = True
-        elif inp == 'K' or inp == 'k':
-            print('GOODBYE')
-            break
-        else:
-            print('Wrong character, try again')
+        elif(inp.lower() == 'dg'):
+            print('RUNNING DIAGNOSIS_CH4')
+            diagnosis_gas()
+        elif(inp.lower() == 'dc'):
+            print('RUNNING DIAGNOSIS_CO')
+            diagnosis_co()
+        elif(inp.lower() == 'eu'):
+            print('RUNNING ESP_UPDATE')
+            esp_update()
+        elif(inp.lower() == 'nt'):
+            set_sleep_time(int(input('insert new time: \n')))
+
+
+if _name_ == '_main_':
+
+    client = mqtt.Client()
+
+    client.username_pw_set(username, password)
+    client.tls_set(ca_certs=ca_cert_route, tls_version=ssl.PROTOCOL_TLS)
+
+    client.on_connect = on_connect
+    client.on_message = on_message
+
+    # Conectar al broker
+    client.connect(host=broker, port=port, keepalive=60)
+    client.loop_start()
+
+    while(True):
+        my_loop()

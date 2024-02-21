@@ -1,5 +1,3 @@
-// ignore_for_file: avoid_print
-
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_blue_plus/flutter_blue_plus.dart';
@@ -20,7 +18,7 @@ void main() {
       await file.writeAsString(errorReport);
       sendReportOnWhatsApp(file.path);
     } else {
-      print('Failed to get external storage directory');
+      printLog('Failed to get external storage directory');
     }
   };
   runApp(const MyApp());
@@ -88,7 +86,6 @@ class MyAppState extends State<MyApp> {
         '/regbank': (context) => Regbank(),
         '/loading': (context) => const LoadingPage(),
         '/device': (context) => const MyDeviceTabs(),
-        '/disconect': (context) => const DisconectPage(),
       },
     );
   }
