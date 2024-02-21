@@ -296,6 +296,7 @@ class RegbankTabState extends State<RegbankTab> {
   Stopwatch? stopwatch;
   Timer? timer;
   double _rp = 1.0;
+  String temp = '';
 
   //// ---------------------------------------------------------------------------------- ////
 
@@ -736,42 +737,18 @@ class RegbankTabState extends State<RegbankTab> {
                     foregroundColor: MaterialStateProperty.all<Color>(
                         const Color.fromARGB(255, 255, 255, 255))),
                 onPressed: () {
-                  sendMessagemqtt('015773_RB', 'Mensaje de prueba');
+                  sendMessagemqtt('015773_RB', 'DIAGNOSIS_OK');
                 },
                 child: const Text('Hacer Diagnosis OK'),
               ),
               const SizedBox(
-                height: 20,
-              ),
-              ElevatedButton(
-                style: ButtonStyle(
-                    backgroundColor: MaterialStateProperty.all<Color>(
-                        const Color.fromARGB(255, 29, 163, 169)),
-                    foregroundColor: MaterialStateProperty.all<Color>(
-                        const Color.fromARGB(255, 255, 255, 255))),
-                onPressed: () {},
-                child: const Text('Hacer Diagnosis CO'),
-              ),
-              const SizedBox(
-                height: 20,
-              ),
-              ElevatedButton(
-                style: ButtonStyle(
-                    backgroundColor: MaterialStateProperty.all<Color>(
-                        const Color.fromARGB(255, 29, 163, 169)),
-                    foregroundColor: MaterialStateProperty.all<Color>(
-                        const Color.fromARGB(255, 255, 255, 255))),
-                onPressed: () {},
-                child: const Text('Hacer Diagnosis CH4'),
-              ),
-              const SizedBox(
-                height: 20,
+                height: 30,
               ),
               Text(
                 'RP ${_rp.round()}',
                 textAlign: TextAlign.center,
                 style: const TextStyle(
-                    color: Color.fromARGB(255, 29, 163, 169), fontSize: 16),
+                    color: Color.fromARGB(255, 29, 163, 169), fontSize: 30),
               ),
               const SizedBox(
                 height: 5,
@@ -801,23 +778,41 @@ class RegbankTabState extends State<RegbankTab> {
               const SizedBox(
                 height: 10,
               ),
+              SizedBox(
+                width: 300,
+                child: TextField(
+                  textAlign: TextAlign.center,
+                  keyboardType: TextInputType.number,
+                  style: const TextStyle(
+                      color: Color.fromARGB(255, 255, 255, 255)),
+                  decoration: const InputDecoration(
+                      labelText: 'Temperatura (°C)',
+                      labelStyle:
+                          TextStyle(color: Color.fromARGB(255, 29, 163, 169)),
+                      hintText: 'Añadir temperatura',
+                      hintStyle:
+                          TextStyle(color: Color.fromARGB(255, 255, 255, 255), fontWeight: FontWeight.normal)),
+                  onChanged: (value) {
+                    temp = value;
+                  },
+                ),
+              ),
+              const SizedBox(
+                height: 10,
+              ),
               ElevatedButton(
                 style: ButtonStyle(
                     backgroundColor: MaterialStateProperty.all<Color>(
                         const Color.fromARGB(255, 29, 163, 169)),
                     foregroundColor: MaterialStateProperty.all<Color>(
                         const Color.fromARGB(255, 255, 255, 255))),
-                onPressed: () {},
+                onPressed: () {
+                  sendMessagemqtt('015773_RB', 'REGPOINT_${_rp}_($temp)');
+                },
                 child: const Text('Enviar RegPoint'),
               ),
               const SizedBox(
-                height: 20,
-              ),
-              const CircularProgressIndicator(
-                color: Color.fromARGB(255, 255, 255, 255),
-              ),
-              const SizedBox(
-                height: 10,
+                height: 30,
               ),
               Text(
                 'Tiempo transcurrido: ${elapsedTime()}',
